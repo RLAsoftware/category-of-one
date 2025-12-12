@@ -58,7 +58,10 @@ export function LoginForm({ onPasswordLogin, onPasswordReset }: LoginFormProps) 
           type="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) setError(null);
+          }}
           required
           autoFocus
         />
@@ -67,7 +70,10 @@ export function LoginForm({ onPasswordLogin, onPasswordReset }: LoginFormProps) 
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (error) setError(null);
+          }}
           required
         />
         
