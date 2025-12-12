@@ -2,13 +2,14 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, Button, Input } from '../ui';
 import type { AdminInvite } from '../../lib/types';
-import { UserPlus, Check, Clock, Trash2 } from 'lucide-react';
+import { UserPlus, Check, Clock, Trash2, Loader2 } from 'lucide-react';
 
 export function AdminInvites() {
   const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,22 +59,39 @@ export function AdminInvites() {
   };
 
   const handleDelete = async (invite: AdminInvite) => {
-    // If the invite was accepted, we need to also remove the admin role
-    if (invite.accepted_at) {
-      // Call database function to remove admin role by email
-      const { error: roleError } = await supabase.rpc('remove_admin_by_email', {
-        admin_email: invite.email
-      });
+    setDeletingId(invite.id);
+    setError(null);
 
-      if (roleError) {
-        console.error('Error removing admin role:', roleError);
-        // Continue with invite deletion even if role removal fails
+    try {
+      // If the invite was accepted, we need to also remove the admin role
+      if (invite.accepted_at) {
+        // Call database function to remove admin role by email
+        const { error: roleError } = await supabase.rpc('remove_admin_by_email', {
+          admin_email: invite.email
+        });
+
+        if (roleError) {
+          console.error('Error removing admin role:', roleError);
+          throw new Error(`Failed to remove admin role: ${roleError.message}`);
+        }
       }
-    }
 
-    // Delete the invite record
-    await supabase.from('admin_invites').delete().eq('id', invite.id);
-    loadInvites();
+      // Delete the invite record
+      const { error: deleteError } = await supabase
+        .from('admin_invites')
+        .delete()
+        .eq('id', invite.id);
+
+      if (deleteError) {
+        throw new Error(`Failed to delete invite: ${deleteError.message}`);
+      }
+
+      loadInvites();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete admin');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -133,6 +151,7 @@ export function AdminInvites() {
               </div>
               <button
                 type="button"
+                disabled={deletingId === invite.id}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (invite.accepted_at) {
@@ -140,14 +159,20 @@ export function AdminInvites() {
                       handleDelete(invite);
                     }
                   } else {
-                    handleDelete(invite);
+                    if (window.confirm(`Are you sure you want to delete the invite for ${invite.email}?`)) {
+                      handleDelete(invite);
+                    }
                   }
                 }}
-                className="inline-flex items-center justify-center p-2 text-slate hover:text-error hover:bg-error/10 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-error/20"
+                className="inline-flex items-center justify-center p-2 text-slate hover:text-error hover:bg-error/10 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-error/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={`Delete ${invite.accepted_at ? 'admin' : 'invite'}`}
                 aria-label={`Delete ${invite.email}`}
               >
-                <Trash2 className="w-4 h-4" />
+                {deletingId === invite.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
               </button>
             </div>
           ))}
