@@ -45,6 +45,11 @@ export function Login() {
       <main className="flex-1 flex items-center justify-center px-4 pb-20">
         <div className="w-full max-w-md">
           <div className="text-center mb-12">
+            <img 
+              src="https://ryanlevesque.net/wp-content/uploads/2024/12/rl-25-full-logo.png" 
+              alt="Category Of One Logo" 
+              className="mx-auto mb-4 max-w-[180px] h-auto"
+            />
             <h1 className="text-4xl mb-4">Category Of One</h1>
           </div>
           
