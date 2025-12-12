@@ -5,7 +5,6 @@ import { Interview } from './pages/Interview';
 import { Admin } from './pages/Admin';
 import { AuthCallback } from './components/Auth/AuthCallback';
 import { ResetPassword } from './pages/ResetPassword';
-import { supabase } from './lib/supabase';
 
 // Component to handle hash-based auth redirects (e.g., password reset)
 function HashAuthHandler() {
