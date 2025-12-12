@@ -70,6 +70,16 @@ export function useAuth() {
             loading: false,
             error: null,
           });
+        } else if (event === 'SIGNED_IN' && _session?.user) {
+          // Handle sign in events
+          const role = await getUserRole(_session.user.id);
+          setState({
+            user: _session.user,
+            session: _session,
+            role,
+            loading: false,
+            error: null,
+          });
         }
       }
     );
@@ -81,11 +91,13 @@ export function useAuth() {
 
   const signInWithMagicLink = useCallback(async (email: string) => {
     setState(prev => ({ ...prev, error: null }));
+    // Use environment variable for production URL, fallback to window.location.origin
+    const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
     
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${siteUrl}/auth/callback`,
       },
     });
 
@@ -144,6 +156,15 @@ export function useAuth() {
   }, []);
 
   const signOut = useCallback(async () => {
+    // Clear state immediately to prevent redirect loops
+    setState({
+      user: null,
+      session: null,
+      role: null,
+      loading: false,
+      error: null,
+    });
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
       setState(prev => ({ ...prev, error: error.message }));
@@ -152,8 +173,10 @@ export function useAuth() {
 
   const sendPasswordReset = useCallback(async (email: string) => {
     setState(prev => ({ ...prev, error: null }));
+    // Use environment variable for production URL, fallback to window.location.origin
+    const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${siteUrl}/reset-password`,
     });
     if (error) {
       setState(prev => ({ ...prev, error: error.message }));

@@ -104,7 +104,7 @@ export function ClientList({ onCreateClient, onSelectClient }: ClientListProps) 
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-1">
-                <h3 className="font-medium text-ink">{client.name}</h3>
+                <h3 className="font-medium text-ink" style={{ fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif', fontSize: '19px' }}>{client.name}</h3>
                 {getStatusBadge(client)}
               </div>
               <p className="text-sm text-slate">

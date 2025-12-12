@@ -11,7 +11,8 @@ export function Login() {
     // Wait for loading to complete
     if (loading) return;
     
-    // Redirect if user is logged in with a role
+    // Only redirect if user is logged in with a role
+    // Don't redirect if user is null (signing out)
     if (user && role) {
       console.log('Login redirect:', role);
       if (role === 'admin') {
@@ -20,6 +21,7 @@ export function Login() {
         navigate('/interview', { replace: true });
       }
     }
+    // If user is explicitly null (not just loading), stay on login page
   }, [user, role, loading, navigate]);
 
   if (loading) {

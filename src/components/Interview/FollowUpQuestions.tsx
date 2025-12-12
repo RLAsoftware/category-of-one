@@ -77,7 +77,7 @@ export function FollowUpQuestions({ questions, onSubmit, loading }: FollowUpQues
           <div className="w-10 h-10 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
             <span className="text-terracotta font-medium">{currentStep + 1}</span>
           </div>
-          <h2 className="text-xl leading-relaxed pt-1.5">
+          <h2 className="question-heading text-xl leading-relaxed pt-1.5">
             {currentQuestion}
           </h2>
         </div>

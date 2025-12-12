@@ -57,8 +57,22 @@ export function AdminInvites() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    await supabase.from('admin_invites').delete().eq('id', id);
+  const handleDelete = async (invite: AdminInvite) => {
+    // If the invite was accepted, we need to also remove the admin role
+    if (invite.accepted_at) {
+      // Call database function to remove admin role by email
+      const { error: roleError } = await supabase.rpc('remove_admin_by_email', {
+        admin_email: invite.email
+      });
+
+      if (roleError) {
+        console.error('Error removing admin role:', roleError);
+        // Continue with invite deletion even if role removal fails
+      }
+    }
+
+    // Delete the invite record
+    await supabase.from('admin_invites').delete().eq('id', invite.id);
     loadInvites();
   };
 
@@ -117,15 +131,24 @@ export function AdminInvites() {
                   <span className="text-xs text-success">Joined</span>
                 )}
               </div>
-              {!invite.accepted_at && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleDelete(invite.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (invite.accepted_at) {
+                    if (window.confirm(`Are you sure you want to remove ${invite.email} as an admin? This will revoke their admin access.`)) {
+                      handleDelete(invite);
+                    }
+                  } else {
+                    handleDelete(invite);
+                  }
+                }}
+                className="inline-flex items-center justify-center p-2 text-slate hover:text-error hover:bg-error/10 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-error/20"
+                title={`Delete ${invite.accepted_at ? 'admin' : 'invite'}`}
+                aria-label={`Delete ${invite.email}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           ))}
         </div>

@@ -73,7 +73,7 @@ export function BaseQuestions({ onSubmit, loading, initialAnswers }: BaseQuestio
           <div className="w-10 h-10 rounded-full bg-sunset/10 flex items-center justify-center flex-shrink-0">
             <PenLine className="w-5 h-5 text-sunset" />
           </div>
-          <h2 className="text-xl leading-relaxed pt-1.5">
+          <h2 className="question-heading text-xl leading-relaxed pt-1.5">
             {currentQuestion.question}
           </h2>
         </div>

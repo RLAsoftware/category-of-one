@@ -76,7 +76,7 @@ export function Admin() {
       <header className="bg-paper border-b border-ink/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-display text-xl text-ink">Category of One Admin</span>
+            <span className="font-display text-xl text-ink" style={{ letterSpacing: '-0.05em', textAlign: 'right' }}>Category of One Admin</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-slate">

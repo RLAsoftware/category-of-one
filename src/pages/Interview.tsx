@@ -54,7 +54,9 @@ export function Interview() {
   }, [client, loadSession]);
 
   const handleSignOut = async () => {
+    // Sign out and clear state
     await signOut();
+    // Navigate to login - state should already be cleared by signOut
     navigate('/login', { replace: true });
   };
 

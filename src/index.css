@@ -51,4 +51,28 @@
     font-weight: 400;
     letter-spacing: -0.05em;
   }
+  
+  h1 {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 300;
+  }
+  
+  h2 {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.05em;
+  }
+  
+  h2.text-xl {
+    line-height: 23.5px;
+  }
+  
+  h2.question-heading {
+    font-family: var(--font-body) !important;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    letter-spacing: -0.05em !important;
+  }
 }
