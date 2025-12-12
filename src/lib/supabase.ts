@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error(`Missing Supabase environment variables: ${missing.join(', ')}. Please ensure these are set in your Vercel project settings.`);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function getUserRole(userId: string) {
   const { data, error } = await supabase
