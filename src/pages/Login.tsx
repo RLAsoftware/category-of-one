@@ -45,7 +45,7 @@ export function Login() {
       <main className="flex-1 flex items-center justify-center px-4 pb-20">
         <div className="w-full max-w-md">
           <div className="text-center mb-12">
-            <h1 className="text-4xl mb-4 font-bold">Category Of One</h1>
+            <h1 className="text-4xl mb-4">Category Of One</h1>
           </div>
           
           <LoginForm
