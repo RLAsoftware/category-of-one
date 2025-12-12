@@ -1,0 +1,150 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { ClientList } from '../components/Admin/ClientList';
+import { ClientForm } from '../components/Admin/ClientForm';
+import { ClientDetail } from '../components/Admin/ClientDetail';
+import { AdminInvites } from '../components/Admin/AdminInvites';
+import { Button } from '../components/ui';
+import type { Client } from '../lib/types';
+import { LogOut, Users, Settings, Loader2 } from 'lucide-react';
+
+type View = 'list' | 'create' | 'detail';
+type Tab = 'clients' | 'settings';
+
+export function Admin() {
+  const navigate = useNavigate();
+  const { user, loading, signOut, role } = useAuth();
+  const [view, setView] = useState<View>('list');
+  const [tab, setTab] = useState<Tab>('clients');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  useEffect(() => {
+    // Wait for loading to complete before making redirect decisions
+    if (loading) return;
+    
+    // If no user after loading, redirect to login
+    if (!user) {
+      console.log('Admin: No user, redirecting to login');
+      navigate('/login', { replace: true });
+      return;
+    }
+    
+    // Only redirect if role is explicitly 'client'
+    if (role === 'client') {
+      console.log('Admin: Client role, redirecting to interview');
+      navigate('/interview', { replace: true });
+      return;
+    }
+    
+    // If role is null but user exists, wait for role to load
+    // Don't redirect - the role might still be loading
+  }, [user, loading, role, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
+  };
+
+  const handleSelectClient = (client: Client) => {
+    setSelectedClient(client);
+    setView('detail');
+  };
+
+  const handleBackToList = () => {
+    setSelectedClient(null);
+    setView('list');
+  };
+
+  // Show loading while auth is loading or if we have a user but no role yet
+  if (loading || (user && !role)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream">
+        <Loader2 className="w-8 h-8 text-sunset animate-spin" />
+      </div>
+    );
+  }
+
+  // If no user, show nothing (redirect will happen)
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-cream">
+      {/* Header */}
+      <header className="bg-paper border-b border-ink/10">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-display text-xl text-ink">Category of One Admin</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate">
+              {user?.email}
+            </span>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
+      <nav className="bg-paper border-b border-ink/10">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex gap-6">
+            <button
+              onClick={() => { setTab('clients'); setView('list'); }}
+              className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${
+                tab === 'clients'
+                  ? 'border-sunset text-ink'
+                  : 'border-transparent text-slate hover:text-ink'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Clients
+            </button>
+            <button
+              onClick={() => setTab('settings')}
+              className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${
+                tab === 'settings'
+                  ? 'border-sunset text-ink'
+                  : 'border-transparent text-slate hover:text-ink'
+              }`}
+            >
+              <Settings className="w-4 h-4" />
+              Settings
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        {tab === 'clients' ? (
+          view === 'list' ? (
+            <ClientList
+              onCreateClient={() => setView('create')}
+              onSelectClient={handleSelectClient}
+            />
+          ) : view === 'create' ? (
+            <ClientForm
+              onBack={handleBackToList}
+              onSuccess={handleBackToList}
+            />
+          ) : view === 'detail' && selectedClient ? (
+            <ClientDetail
+              client={selectedClient}
+              onBack={handleBackToList}
+            />
+          ) : null
+        ) : (
+          <div className="max-w-xl">
+            <h1 className="text-2xl mb-6">Settings</h1>
+            <AdminInvites />
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

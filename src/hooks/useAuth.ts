@@ -1,0 +1,174 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { User, Session, AuthError } from '@supabase/supabase-js';
+import { supabase, getUserRole } from '../lib/supabase';
+import type { UserRole } from '../lib/types';
+
+interface AuthState {
+  user: User | null;
+  session: Session | null;
+  role: UserRole | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useAuth() {
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    session: null,
+    role: null,
+    loading: true,
+    error: null,
+  });
+  
+  const isLoggingIn = useRef(false);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    // Prevent double initialization in React Strict Mode
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const initAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          setState(prev => ({ ...prev, loading: false, error: error.message }));
+          return;
+        }
+
+        if (session?.user) {
+          const role = await getUserRole(session.user.id);
+          setState({
+            user: session.user,
+            session,
+            role,
+            loading: false,
+            error: null,
+          });
+        } else {
+          setState(prev => ({ ...prev, loading: false }));
+        }
+      } catch (err) {
+        console.error('Auth initialization error:', err);
+        setState(prev => ({ ...prev, loading: false, error: 'Failed to initialize auth' }));
+      }
+    };
+
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, _session) => {
+        // Skip if we're handling a manual login
+        if (isLoggingIn.current) return;
+
+        if (event === 'SIGNED_OUT') {
+          setState({
+            user: null,
+            session: null,
+            role: null,
+            loading: false,
+            error: null,
+          });
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signInWithMagicLink = useCallback(async (email: string) => {
+    setState(prev => ({ ...prev, error: null }));
+    
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setState(prev => ({ ...prev, error: error.message }));
+      return { error };
+    }
+
+    return { error: null };
+  }, []);
+
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    isLoggingIn.current = true;
+    setState(prev => ({ ...prev, error: null, loading: true }));
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        isLoggingIn.current = false;
+        setState(prev => ({ ...prev, error: (error as AuthError).message, loading: false }));
+        return { error: { message: (error as AuthError).message } };
+      }
+
+      if (!data.session?.user) {
+        isLoggingIn.current = false;
+        setState(prev => ({ ...prev, error: 'No session created', loading: false }));
+        return { error: { message: 'No session created' } };
+      }
+
+      const role = await getUserRole(data.session.user.id);
+
+      setState({
+        user: data.session.user,
+        session: data.session,
+        role,
+        loading: false,
+        error: null,
+      });
+
+      // Clear flag after state is set
+      setTimeout(() => {
+        isLoggingIn.current = false;
+      }, 500);
+
+      return { error: null };
+    } catch (err) {
+      console.error('Login error:', err);
+      isLoggingIn.current = false;
+      setState(prev => ({ ...prev, error: 'Login failed', loading: false }));
+      return { error: { message: 'Login failed' } };
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setState(prev => ({ ...prev, error: error.message }));
+    }
+  }, []);
+
+  const sendPasswordReset = useCallback(async (email: string) => {
+    setState(prev => ({ ...prev, error: null }));
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      setState(prev => ({ ...prev, error: error.message }));
+      return { error: { message: error.message } };
+    }
+    return { error: null };
+  }, []);
+
+  return {
+    ...state,
+    signInWithMagicLink,
+    signInWithPassword,
+    signOut,
+    sendPasswordReset,
+    isAdmin: state.role === 'admin',
+    isClient: state.role === 'client',
+  };
+}
