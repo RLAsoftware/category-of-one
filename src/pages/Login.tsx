@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 
 export function Login() {
   const navigate = useNavigate();
-  const { user, role, loading, signInWithPassword, sendPasswordReset } = useAuth();
+  const { user, role, loading, signInWithMagicLink, signInWithPassword, sendPasswordReset } = useAuth();
 
   useEffect(() => {
     // Wait for loading to complete
@@ -56,6 +56,7 @@ export function Login() {
           </div>
           
           <LoginForm
+            onMagicLink={signInWithMagicLink}
             onPasswordLogin={signInWithPassword}
             onPasswordReset={sendPasswordReset}
           />
