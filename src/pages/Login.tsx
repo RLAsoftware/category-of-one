@@ -52,7 +52,7 @@ export function Login() {
               alt="Category Of One Logo" 
               className="mx-auto mb-4 max-w-[180px] h-auto"
             />
-            <h1 className="text-4xl mb-4">Category Of One</h1>
+            <h1 className="font-primary text-4xl mb-4">Category Of One</h1>
           </div>
           
           <LoginForm

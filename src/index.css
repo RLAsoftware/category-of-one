@@ -75,4 +75,9 @@
   .font-display {
     letter-spacing: -0.05em !important;
   }
+  
+  .font-primary {
+    font-family: var(--font-display) !important;
+    letter-spacing: -0.05em !important;
+  }
 }
