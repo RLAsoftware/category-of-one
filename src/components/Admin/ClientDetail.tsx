@@ -2,19 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, Button } from '../ui';
 import type { Client, StyleProfile, CategoryOfOneProfile } from '../../lib/types';
-import { 
-  ArrowLeft, 
-  Send, 
-  FileText, 
-  CheckCircle, 
-  Clock, 
+import {
+  ArrowLeft,
+  Send,
+  FileText,
+  CheckCircle,
+  Clock,
   Mail,
   User,
   Building,
   Calendar,
   Copy,
   Check,
-  Plus
 } from 'lucide-react';
 
 interface ClientDetailProps {
