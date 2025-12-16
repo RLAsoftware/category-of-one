@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getLLMConfig, updateLLMConfig } from '../../lib/supabase';
+import { supabase, getLLMConfig, updateLLMConfig } from '../../lib/supabase';
 import type { LLMConfig, UserRole } from '../../lib/types';
 import { Button, Card, Textarea, Input } from '../ui';
 import { Loader2, Settings2 } from 'lucide-react';
@@ -11,6 +11,7 @@ interface LLMConfigPanelProps {
 export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
   const [config, setConfig] = useState<LLMConfig | null>(null);
   const [model, setModel] = useState('');
+  const [availableModels, setAvailableModels] = useState<{ id: string; label: string }[]>([]);
   const [chatPrompt, setChatPrompt] = useState('');
   const [synthesisPrompt, setSynthesisPrompt] = useState('');
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,7 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
       setError(null);
       setSaved(false);
       try {
+        // Load current config
         const cfg = await getLLMConfig('category_of_one');
         if (cfg) {
           setConfig(cfg);
@@ -39,6 +41,17 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
           setSynthesisPrompt(cfg.synthesis_system_prompt);
         } else {
           setError('No LLM configuration found. Please contact support.');
+        }
+
+        // Load available Claude models from edge function
+        const { data, error } = await supabase.functions.invoke<{
+          models: { id: string; label: string }[];
+        }>('list-claude-models');
+
+        if (error) {
+          console.error('list-claude-models error:', error);
+        } else if (data?.models?.length) {
+          setAvailableModels(data.models);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load LLM configuration');
@@ -111,18 +124,38 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
               <label className="block text-sm font-medium text-slate mb-1">
                 Claude model
               </label>
-              <Input
-                value={model}
-                onChange={(e) => {
-                  setModel(e.target.value);
-                  setSaved(false);
-                }}
-                placeholder="claude-sonnet-4-20250514"
-                disabled={!isAdmin}
-              />
+              {availableModels.length > 0 ? (
+                <select
+                  value={model}
+                  onChange={(e) => {
+                    setModel(e.target.value);
+                    setSaved(false);
+                  }}
+                  disabled={!isAdmin}
+                  className="w-full rounded-md border border-ink/20 bg-white px-3 py-2 text-sm text-ink shadow-sm focus:outline-none focus:ring-2 focus:ring-sunset/30 focus:border-sunset disabled:opacity-50"
+                >
+                  {availableModels.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                  {!availableModels.find((m) => m.id === model) && model && (
+                    <option value={model}>{model} (current)</option>
+                  )}
+                </select>
+              ) : (
+                <Input
+                  value={model}
+                  onChange={(e) => {
+                    setModel(e.target.value);
+                    setSaved(false);
+                  }}
+                  placeholder="claude-sonnet-4-20250514"
+                  disabled={!isAdmin}
+                />
+              )}
               <p className="text-xs text-slate mt-1">
-                Example: <code>claude-3-5-sonnet-latest</code>. Changes take effect on the next
-                conversation.
+                Models are loaded live from Claude. Changes take effect on the next conversation.
               </p>
             </div>
 
