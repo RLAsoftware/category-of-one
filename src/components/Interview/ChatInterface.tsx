@@ -63,7 +63,7 @@ export function ChatInterface({
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-180px)]">
+    <div className="flex flex-col min-h-[calc(100vh-180px)] pb-32">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-3xl mx-auto space-y-6">
@@ -120,8 +120,8 @@ export function ChatInterface({
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="px-4 pb-6 pt-2">
+      {/* Input Area - Floating 20px from bottom */}
+      <div className="fixed bottom-5 left-0 right-0 px-4 z-10">
         <div className="max-w-3xl mx-auto">
           <div className="relative">
             <div className="flex items-end">
