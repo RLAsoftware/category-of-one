@@ -113,12 +113,14 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 text-sunset animate-spin" />
         </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-4">
-          {error}
-        </div>
       ) : !config ? null : (
         <>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-4">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-slate mb-1">
