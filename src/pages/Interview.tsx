@@ -11,11 +11,17 @@ import type { Client } from '../lib/types';
 
 export function Interview() {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, sessionTimedOut } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
 
   useEffect(() => {
+    // If session timed out, redirect to login
+    if (sessionTimedOut) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     if (!authLoading && !user) {
       navigate('/login', { replace: true });
       return;
@@ -24,7 +30,7 @@ export function Interview() {
     if (user) {
       loadClient();
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, sessionTimedOut, navigate]);
 
   const loadClient = async () => {
     if (!user) return;

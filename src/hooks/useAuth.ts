@@ -9,9 +9,10 @@ interface AuthState {
   role: UserRole | null;
   loading: boolean;
   error: string | null;
+  sessionTimedOut: boolean;
 }
 
-const SESSION_INIT_TIMEOUT_MS = 8000;
+const SESSION_INIT_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -38,6 +39,7 @@ export function useAuth() {
     role: null,
     loading: true,
     error: null,
+    sessionTimedOut: false,
   });
   
   const isLoggingIn = useRef(false);
@@ -74,10 +76,12 @@ export function useAuth() {
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
+        const isTimeout = err instanceof Error && err.message === 'Session check timed out';
         setState((prev) => ({
           ...prev,
           loading: false,
-          error: 'Failed to check session, please sign in again.',
+          error: isTimeout ? 'Session check timed out. Please sign in again.' : 'Failed to check session, please sign in again.',
+          sessionTimedOut: isTimeout,
         }));
       }
     };
@@ -96,6 +100,7 @@ export function useAuth() {
             role: null,
             loading: false,
             error: null,
+            sessionTimedOut: false,
           });
         } else if (event === 'SIGNED_IN' && _session?.user) {
           // Handle sign in events
@@ -106,6 +111,7 @@ export function useAuth() {
             role,
             loading: false,
             error: null,
+            sessionTimedOut: false,
           });
         }
       }
@@ -190,6 +196,7 @@ export function useAuth() {
       role: null,
       loading: false,
       error: null,
+      sessionTimedOut: false,
     });
     
     const { error } = await supabase.auth.signOut();
