@@ -2,10 +2,8 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { 
   LocalChatMessage, 
-  ChatMessage, 
   InterviewSession,
   CategoryOfOneProfile,
-  CategoryOfOneProfileData 
 } from '../lib/types';
 
 interface UseCategoryOfOneChatOptions {
