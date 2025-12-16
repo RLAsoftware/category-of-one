@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,7 +41,19 @@ interface CategoryOfOneProfile {
   raw_profile: string;
 }
 
-const SYNTHESIS_PROMPT = `You are a Brand Strategy expert. Analyze the following conversation and extract a comprehensive "Category of One" profile.
+interface LLMConfig {
+  id: string;
+  name: string;
+  model: string;
+  chat_system_prompt: string;
+  synthesis_system_prompt: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+const DEFAULT_MODEL = "claude-sonnet-4-20250514";
+
+const DEFAULT_SYNTHESIS_PROMPT = `You are a Brand Strategy expert. Analyze the following conversation and extract a comprehensive "Category of One" profile.
 
 Based on the conversation, create a detailed profile with EXACTLY this JSON structure:
 
@@ -76,6 +89,31 @@ Rules:
 
 Return ONLY the JSON object, no markdown formatting, no code blocks, no explanation - just the raw JSON.`;
 
+async function getLLMConfig(): Promise<LLMConfig | null> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceKey) {
+    console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    return null;
+  }
+
+  const client = createClient(supabaseUrl, serviceKey);
+
+  const { data, error } = await client
+    .from("llm_configs")
+    .select("*")
+    .eq("name", "category_of_one")
+    .single();
+
+  if (error) {
+    console.error("Failed to load llm_configs:", error);
+    return null;
+  }
+
+  return data as LLMConfig;
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -87,6 +125,8 @@ Deno.serve(async (req: Request) => {
     if (!anthropicApiKey) {
       throw new Error('ANTHROPIC_API_KEY not configured');
     }
+
+    const config = await getLLMConfig();
 
     const { messages, clientName }: RequestBody = await req.json();
 
@@ -104,9 +144,9 @@ Deno.serve(async (req: Request) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: config?.model || DEFAULT_MODEL,
         max_tokens: 2048,
-        system: SYNTHESIS_PROMPT,
+        system: config?.synthesis_system_prompt || DEFAULT_SYNTHESIS_PROMPT,
         messages: [
           { 
             role: 'user', 

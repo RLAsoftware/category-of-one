@@ -5,6 +5,7 @@ import { ClientList } from '../components/Admin/ClientList';
 import { ClientForm } from '../components/Admin/ClientForm';
 import { ClientDetail } from '../components/Admin/ClientDetail';
 import { AdminInvites } from '../components/Admin/AdminInvites';
+import { LLMConfigPanel } from '../components/Admin/LLMConfigPanel';
 import { Button } from '../components/ui';
 import type { Client } from '../lib/types';
 import { LogOut, Users, Settings, Loader2 } from 'lucide-react';
@@ -139,9 +140,12 @@ export function Admin() {
             />
           ) : null
         ) : (
-          <div className="max-w-xl">
+          <div className="max-w-3xl">
             <h1 className="text-2xl mb-6">Settings</h1>
-            <AdminInvites />
+            <div className="space-y-6">
+              <AdminInvites />
+              <LLMConfigPanel role={role} />
+            </div>
           </div>
         )}
       </main>

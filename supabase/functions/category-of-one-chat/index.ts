@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,8 +17,19 @@ interface RequestBody {
   clientName: string;
 }
 
-// System prompt that guides the Category of One conversation
-const SYSTEM_PROMPT = `You are an expert Brand Strategist and Positioning Consultant conducting a conversational interview to help a client discover their "Category of One" - their unique market positioning that makes them incomparable to competitors.
+interface LLMConfig {
+  id: string;
+  name: string;
+  model: string;
+  chat_system_prompt: string;
+  synthesis_system_prompt: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+// Default system prompt that guides the Category of One conversation.
+// The actual prompt and model can be overridden via the llm_configs table.
+const DEFAULT_CHAT_SYSTEM_PROMPT = `You are an expert Brand Strategist and Positioning Consultant conducting a conversational interview to help a client discover their "Category of One" - their unique market positioning that makes them incomparable to competitors.
 
 Your personality:
 - Warm, encouraging, and genuinely curious
@@ -48,6 +60,33 @@ IMPORTANT: When the conversation is complete and you've gathered all the informa
 
 Do NOT generate the profile yourself - just have the conversation and signal when ready.`;
 
+const DEFAULT_MODEL = "claude-sonnet-4-20250514";
+
+async function getLLMConfig(): Promise<LLMConfig | null> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceKey) {
+    console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    return null;
+  }
+
+  const client = createClient(supabaseUrl, serviceKey);
+
+  const { data, error } = await client
+    .from("llm_configs")
+    .select("*")
+    .eq("name", "category_of_one")
+    .single();
+
+  if (error) {
+    console.error("Failed to load llm_configs:", error);
+    return null;
+  }
+
+  return data as LLMConfig;
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -60,10 +99,13 @@ Deno.serve(async (req: Request) => {
       throw new Error('ANTHROPIC_API_KEY not configured');
     }
 
+    const config = await getLLMConfig();
+
     const { messages, clientName }: RequestBody = await req.json();
 
     // Build messages for Claude (system prompt is separate)
-    const systemPrompt = SYSTEM_PROMPT.replace(/\[CLIENT_NAME\]/g, clientName);
+    const systemPrompt = (config?.chat_system_prompt || DEFAULT_CHAT_SYSTEM_PROMPT)
+      .replace(/\[CLIENT_NAME\]/g, clientName);
 
     // If this is the start of conversation, add initial greeting context
     const isNewConversation = messages.length === 0 || 
@@ -96,7 +138,7 @@ Deno.serve(async (req: Request) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: config?.model || DEFAULT_MODEL,
         max_tokens: 1024,
         system: systemPrompt,
         messages: claudeMessages,

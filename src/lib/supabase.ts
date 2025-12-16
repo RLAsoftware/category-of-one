@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { LLMConfig } from './types';
 
 // Note: Vite requires VITE_ prefix for client-side env vars
 // In Vercel, set these as VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY
@@ -50,3 +51,42 @@ export async function getBrandKnowledge(clientId: string) {
   if (error) return [];
   return data;
 }
+
+export async function getLLMConfig(name: string = 'category_of_one'): Promise<LLMConfig | null> {
+  const { data, error } = await supabase
+    .from('llm_configs')
+    .select('*')
+    .eq('name', name)
+    .single();
+
+  if (error) {
+    console.error('getLLMConfig error:', error.message);
+    return null;
+  }
+
+  return data as LLMConfig;
+}
+
+export async function updateLLMConfig(
+  name: string,
+  payload: Pick<LLMConfig, 'model' | 'chat_system_prompt' | 'synthesis_system_prompt'>
+): Promise<LLMConfig | null> {
+  const { data, error } = await supabase
+    .from('llm_configs')
+    .update({
+      model: payload.model,
+      chat_system_prompt: payload.chat_system_prompt,
+      synthesis_system_prompt: payload.synthesis_system_prompt,
+    })
+    .eq('name', name)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('updateLLMConfig error:', error.message);
+    throw error;
+  }
+
+  return data as LLMConfig;
+}
+

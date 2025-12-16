@@ -39,6 +39,28 @@ export function useCategoryOfOneChat({
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Helper to build authenticated headers for Edge Functions
+  const getAuthHeaders = useCallback(async () => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey =
+      import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+    const {
+      data: { session: authSession },
+    } = await supabase.auth.getSession();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      apikey: supabaseAnonKey,
+    };
+
+    if (authSession?.access_token) {
+      headers.Authorization = `Bearer ${authSession.access_token}`;
+    }
+
+    return { supabaseUrl, headers };
+  }, []);
+
   // Initialize or load existing chat session
   const initializeChat = useCallback(async () => {
     setIsLoading(true);
@@ -124,21 +146,17 @@ export function useCategoryOfOneChat({
     setIsStreaming(true);
     
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/category-of-one-chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            sessionId,
-            messages: [],
-            clientName,
-          }),
-        }
-      );
+      const { supabaseUrl, headers } = await getAuthHeaders();
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/category-of-one-chat`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          sessionId,
+          messages: [],
+          clientName,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error('Failed to start conversation');
@@ -246,22 +264,18 @@ export function useCategoryOfOneChat({
         content: m.content,
       }));
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/category-of-one-chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            sessionId: session.id,
-            messages: apiMessages,
-            clientName,
-          }),
-          signal: abortControllerRef.current.signal,
-        }
-      );
+      const { supabaseUrl, headers } = await getAuthHeaders();
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/category-of-one-chat`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          sessionId: session.id,
+          messages: apiMessages,
+          clientName,
+        }),
+        signal: abortControllerRef.current.signal,
+      });
 
       if (!response.ok) {
         throw new Error('Failed to send message');
@@ -360,24 +374,20 @@ export function useCategoryOfOneChat({
 
       setSession(prev => prev ? { ...prev, status: 'generating_profile' } : null);
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/synthesize-category-of-one`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            sessionId,
-            messages: chatMessages.map(m => ({
-              role: m.role,
-              content: m.content,
-            })),
-            clientName,
-          }),
-        }
-      );
+      const { supabaseUrl, headers } = await getAuthHeaders();
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/synthesize-category-of-one`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          sessionId,
+          messages: chatMessages.map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
+          clientName,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error('Failed to synthesize profile');

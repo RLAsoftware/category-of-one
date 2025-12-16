@@ -192,3 +192,18 @@ export interface CategoryOfOneProfileData {
   transformation: Transformation;
   competitiveLandscape: string;
 }
+
+// ============================================
+// LLM Config Types
+// ============================================
+
+export interface LLMConfig {
+  id: string;
+  name: string;
+  model: string;
+  chat_system_prompt: string;
+  synthesis_system_prompt: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
