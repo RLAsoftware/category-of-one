@@ -5,14 +5,21 @@ import { useAuth } from '../hooks/useAuth';
 
 export function Login() {
   const navigate = useNavigate();
-  const { user, role, loading, signInWithMagicLink, signInWithPassword, sendPasswordReset } = useAuth();
+  const {
+    user,
+    role,
+    loading,
+    signInWithMagicLink,
+    signInWithPassword,
+    sendPasswordReset,
+  } = useAuth();
 
   useEffect(() => {
-    // Wait for loading to complete
+    // Wait for loading to complete before deciding redirects
     if (loading) return;
-    
+
     // Only redirect if user is logged in with a role
-    // Don't redirect if user is null (signing out)
+    // Don't redirect if user is null (signed out or not authenticated)
     if (user && role) {
       console.log('Login redirect:', role);
       if (role === 'admin') {
@@ -23,14 +30,6 @@ export function Login() {
     }
     // If user is explicitly null (not just loading), stay on login page
   }, [user, role, loading, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-cream">
-        <div className="animate-pulse text-slate">Loading...</div>
-      </div>
-    );
-  }
 
   // If user is logged in, show loading while redirect happens
   if (user && role) {
@@ -54,6 +53,12 @@ export function Login() {
             />
             <h1 className="font-primary text-4xl mb-4">Category Of One</h1>
           </div>
+
+          {loading && (
+            <p className="text-center text-xs text-slate mb-3">
+              Checking your session…
+            </p>
+          )}
           
           <LoginForm
             onMagicLink={signInWithMagicLink}
