@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, Button } from '../ui';
-import { BrandKnowledgeEditor } from './BrandKnowledgeEditor';
-import type { Client, BrandKnowledge, StyleProfile, CategoryOfOneProfile } from '../../lib/types';
+import type { Client, StyleProfile, CategoryOfOneProfile } from '../../lib/types';
 import { 
   ArrowLeft, 
   Send, 
@@ -24,12 +23,9 @@ interface ClientDetailProps {
 }
 
 export function ClientDetail({ client, onBack }: ClientDetailProps) {
-  const [brandKnowledge, setBrandKnowledge] = useState<BrandKnowledge[]>([]);
   const [profiles, setProfiles] = useState<StyleProfile[]>([]);
   const [categoryProfiles, setCategoryProfiles] = useState<CategoryOfOneProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showEditor, setShowEditor] = useState(false);
-  const [editingKnowledge, setEditingKnowledge] = useState<BrandKnowledge | null>(null);
   const [sendingInvite, setSendingInvite] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -40,13 +36,11 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
   const loadClientData = async () => {
     setLoading(true);
     
-    const [knowledgeRes, profilesRes, categoryProfilesRes] = await Promise.all([
-      supabase.from('brand_knowledge').select('*').eq('client_id', client.id).order('created_at'),
+    const [profilesRes, categoryProfilesRes] = await Promise.all([
       supabase.from('style_profiles').select('*').eq('client_id', client.id).order('created_at', { ascending: false }),
       supabase.from('category_of_one_profiles').select('*').eq('client_id', client.id).order('created_at', { ascending: false }),
     ]);
 
-    setBrandKnowledge(knowledgeRes.data || []);
     setProfiles(profilesRes.data || []);
     setCategoryProfiles(categoryProfilesRes.data || []);
     setLoading(false);
@@ -79,27 +73,6 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveKnowledge = async (title: string, content: string) => {
-    if (editingKnowledge) {
-      await supabase
-        .from('brand_knowledge')
-        .update({ title, content, updated_at: new Date().toISOString() })
-        .eq('id', editingKnowledge.id);
-    } else {
-      await supabase
-        .from('brand_knowledge')
-        .insert({ client_id: client.id, title, content });
-    }
-    setShowEditor(false);
-    setEditingKnowledge(null);
-    loadClientData();
-  };
-
-  const handleDeleteKnowledge = async (id: string) => {
-    await supabase.from('brand_knowledge').delete().eq('id', id);
-    loadClientData();
-  };
-
   const latestCategoryProfile = categoryProfiles[0] || null;
 
   const downloadMarkdown = (filename: string, content?: string | null) => {
@@ -114,20 +87,6 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
-  if (showEditor) {
-    return (
-      <BrandKnowledgeEditor
-        initialTitle={editingKnowledge?.title}
-        initialContent={editingKnowledge?.content}
-        onSave={handleSaveKnowledge}
-        onCancel={() => {
-          setShowEditor(false);
-          setEditingKnowledge(null);
-        }}
-      />
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -204,20 +163,13 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
         </div>
       </Card>
 
-      {/* Category of One Outputs & Brand Knowledge */}
+      {/* Category of One Outputs */}
       <Card variant="bordered" className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-sunset" />
-            <h2 className="text-lg">Brand Knowledge & Outputs</h2>
+            <h2 className="text-lg">Category of One Outputs</h2>
           </div>
-          <Button
-            size="sm"
-            onClick={() => setShowEditor(true)}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Document
-          </Button>
         </div>
 
         {loading ? (
@@ -228,12 +180,8 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
           </div>
         ) : (
           <>
-            {/* Category of One outputs */}
             {latestCategoryProfile ? (
               <div className="mb-6">
-                <h3 className="text-sm font-semibold text-ink mb-2">
-                  Category of One Outputs
-                </h3>
                 <p className="text-xs text-slate mb-3">
                   These markdown files were generated from the latest completed interview.
                 </p>
@@ -285,53 +233,6 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
                 generated markdown files will appear here.
               </p>
             )}
-
-            <div className="border-t border-ink/10 pt-4">
-              <h3 className="text-sm font-semibold text-ink mb-2">Brand Knowledge Documents</h3>
-
-              {brandKnowledge.length === 0 ? (
-                <p className="text-slate text-center py-4 text-sm">
-                  No brand knowledge added yet. Add documents to provide context for the AI
-                  interview.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {brandKnowledge.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-cream hover:bg-cream/70 transition-colors"
-                    >
-                      <div>
-                        <h3 className="font-medium text-ink">{doc.title}</h3>
-                        <p className="text-sm text-slate">
-                          {doc.content.substring(0, 100)}...
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingKnowledge(doc);
-                            setShowEditor(true);
-                          }}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-error hover:text-error"
-                          onClick={() => handleDeleteKnowledge(doc.id)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </>
         )}
       </Card>
