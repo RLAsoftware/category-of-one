@@ -172,7 +172,7 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
                   setSaved(false);
                 }}
                 rows={8}
-                className="font-mono text-xs"
+                className="font-mono text-xs bg-white"
                 disabled={!isAdmin}
               />
             </div>
@@ -188,7 +188,7 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
                   setSaved(false);
                 }}
                 rows={8}
-                className="font-mono text-xs"
+                className="font-mono text-xs bg-white"
                 disabled={!isAdmin}
               />
             </div>
