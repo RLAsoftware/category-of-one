@@ -12,6 +12,7 @@ import { LogOut, Users, Settings, Loader2 } from 'lucide-react';
 
 type View = 'list' | 'create' | 'detail';
 type Tab = 'clients' | 'settings';
+type SettingsTab = 'team' | 'llm';
 
 export function Admin() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export function Admin() {
   const [view, setView] = useState<View>('list');
   const [tab, setTab] = useState<Tab>('clients');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('team');
 
   useEffect(() => {
     // Wait for loading to complete before making redirect decisions
@@ -141,11 +143,39 @@ export function Admin() {
           ) : null
         ) : (
           <div className="max-w-3xl">
-            <h1 className="text-2xl mb-6">Settings</h1>
-            <div className="space-y-6">
-              <AdminInvites />
-              <LLMConfigPanel role={role} />
+            <h1 className="text-2xl mb-4">Settings</h1>
+
+            {/* Settings-level tabs */}
+            <div className="flex gap-4 border-b border-ink/10 mb-6">
+              <button
+                onClick={() => setSettingsTab('team')}
+                className={`py-2 px-1 border-b-2 text-sm transition-colors ${
+                  settingsTab === 'team'
+                    ? 'border-sunset text-ink'
+                    : 'border-transparent text-slate hover:text-ink'
+                }`}
+              >
+                Team
+              </button>
+              <button
+                onClick={() => setSettingsTab('llm')}
+                className={`py-2 px-1 border-b-2 text-sm transition-colors ${
+                  settingsTab === 'llm'
+                    ? 'border-sunset text-ink'
+                    : 'border-transparent text-slate hover:text-ink'
+                }`}
+              >
+                LLM
+              </button>
             </div>
+
+            {settingsTab === 'team' ? (
+              <div className="space-y-6">
+                <AdminInvites />
+              </div>
+            ) : (
+              <LLMConfigPanel role={role} />
+            )}
           </div>
         )}
       </main>
