@@ -96,14 +96,6 @@ export function Interview() {
 
   const isCompleted = session?.status === 'completed' && profile;
 
-  const getProgressPercentage = () => {
-    if (!session) return 0;
-    if (session.status === 'completed') return 100;
-    if (session.status === 'generating_profile') return 80;
-    const chatDepth = Math.min(messages.length, 18);
-    return Math.round((chatDepth / 18) * 70);
-  };
-
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       {/* Header */}
@@ -117,21 +109,6 @@ export function Interview() {
               <span className="font-display text-lg text-ink block leading-tight">
                 Category of One
               </span>
-            </div>
-          </div>
-
-          {/* Context pill / progress */}
-          <div className="hidden sm:flex flex-1 items-center justify-center">
-            <div className="px-4 py-1.5 rounded-full bg-white/70 border border-white/60 shadow-sm flex items-center gap-3">
-              <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate">
-                Refining Your Story
-              </span>
-              <div className="h-1 w-24 rounded-full bg-cream overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-sunset to-amber-400 transition-all duration-500"
-                  style={{ width: `${getProgressPercentage()}%` }}
-                />
-              </div>
             </div>
           </div>
 
