@@ -18,13 +18,13 @@ export function Login() {
     // Wait for loading to complete before deciding redirects
     if (loading) return;
 
-    // Only redirect if user is logged in with a role
-    // Don't redirect if user is null (signed out or not authenticated)
-    if (user && role) {
+    // Redirect any authenticated user
+    // Admins go to /admin, everyone else goes to /interview
+    if (user) {
       console.log('Login redirect:', role);
       if (role === 'admin') {
         navigate('/admin', { replace: true });
-      } else if (role === 'client') {
+      } else {
         navigate('/interview', { replace: true });
       }
     }
@@ -32,7 +32,7 @@ export function Login() {
   }, [user, role, loading, navigate]);
 
   // If user is logged in, show loading while redirect happens
-  if (user && role) {
+  if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream">
         <div className="animate-pulse text-slate">Redirecting...</div>
