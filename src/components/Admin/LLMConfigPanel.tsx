@@ -42,22 +42,38 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
         } else {
           setError('No LLM configuration found. Please contact support.');
         }
-
-        // Load available Claude models from edge function
-        const { data, error } = await supabase.functions.invoke<{
-          models: { id: string; label: string }[];
-        }>('list-claude-models');
-
-        if (error) {
-          console.error('list-claude-models error:', error);
-        } else if (data?.models?.length) {
-          setAvailableModels(data.models);
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load LLM configuration');
       } finally {
         setLoading(false);
       }
+
+      // Load available Claude models separately (non-blocking with timeout)
+      // This way if it hangs, the config still loads
+      const loadModels = async () => {
+        try {
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Models request timed out')), 10000); // 10 second timeout
+          });
+
+          const modelsPromise = supabase.functions.invoke<{
+            models: { id: string; label: string }[];
+          }>('list-claude-models');
+
+          const { data, error } = await Promise.race([modelsPromise, timeoutPromise]);
+
+          if (error) {
+            console.error('list-claude-models error:', error);
+          } else if (data?.models?.length) {
+            setAvailableModels(data.models);
+          }
+        } catch (err) {
+          console.warn('Failed to load Claude models list:', err);
+          // Don't show error to user - models list is nice-to-have, not critical
+        }
+      };
+
+      loadModels();
     };
 
     load();
