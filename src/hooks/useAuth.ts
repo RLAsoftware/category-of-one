@@ -172,6 +172,7 @@ export function useAuth() {
         role,
         loading: false,
         error: null,
+        sessionTimedOut: false,
       });
 
       // Clear flag after state is set
