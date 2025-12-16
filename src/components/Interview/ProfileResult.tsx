@@ -6,10 +6,19 @@ interface ProfileResultProps {
   profile: CategoryOfOneProfile;
   clientName: string;
   onReset: () => void;
-  onExport: () => void;
+  onExportFull: () => void;
+  onExportBusiness: () => void;
+  onExportCategory: () => void;
 }
 
-export function ProfileResult({ profile, clientName, onReset, onExport }: ProfileResultProps) {
+export function ProfileResult({
+  profile,
+  clientName,
+  onReset,
+  onExportFull,
+  onExportBusiness,
+  onExportCategory,
+}: ProfileResultProps) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
@@ -187,12 +196,20 @@ export function ProfileResult({ profile, clientName, onReset, onExport }: Profil
       </div>
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
-        <Button onClick={onExport} variant="primary" className="gap-2">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center mt-12">
+        <Button onClick={onExportFull} variant="primary" className="gap-2">
           <Download className="w-4 h-4" />
-          Export as Markdown
+          Export full profile
         </Button>
-        <Button onClick={onReset} variant="secondary" className="gap-2">
+        <Button onClick={onExportBusiness} variant="secondary" className="gap-2">
+          <Download className="w-4 h-4" />
+          Export business-profile.md
+        </Button>
+        <Button onClick={onExportCategory} variant="secondary" className="gap-2">
+          <Download className="w-4 h-4" />
+          Export category-of-one.md
+        </Button>
+        <Button onClick={onReset} variant="ghost" className="gap-2">
           <RefreshCw className="w-4 h-4" />
           Start Over
         </Button>

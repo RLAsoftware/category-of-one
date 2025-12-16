@@ -178,6 +178,8 @@ export interface CategoryOfOneProfile {
   transformation: Transformation | null;
   competitive_landscape: string | null;
   raw_profile: string;
+  business_profile_md?: string | null;
+  category_of_one_md?: string | null;
   created_at: string;
   updated_at: string;
 }

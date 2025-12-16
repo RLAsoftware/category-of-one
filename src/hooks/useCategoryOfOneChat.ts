@@ -410,6 +410,8 @@ export function useCategoryOfOneChat({
           transformation: profileData.transformation,
           competitive_landscape: profileData.competitive_landscape,
           raw_profile: profileData.raw_profile,
+          business_profile_md: profileData.business_profile_md,
+          category_of_one_md: profileData.category_of_one_md,
         })
         .select()
         .single();
@@ -491,6 +493,35 @@ export function useCategoryOfOneChat({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
+    a.download = `category-of-one-full-${clientName.toLowerCase().replace(/\s+/g, '-')}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [profile, clientName]);
+
+  const exportBusinessProfile = useCallback(() => {
+    if (!profile?.business_profile_md) return;
+
+    const blob = new Blob([profile.business_profile_md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `business-profile-${clientName.toLowerCase().replace(/\s+/g, '-')}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [profile, clientName]);
+
+  const exportCategoryOfOneDoc = useCallback(() => {
+    const content = profile?.category_of_one_md || profile?.raw_profile;
+    if (!content) return;
+
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
     a.download = `category-of-one-${clientName.toLowerCase().replace(/\s+/g, '-')}.md`;
     document.body.appendChild(a);
     a.click();
@@ -511,6 +542,8 @@ export function useCategoryOfOneChat({
     synthesizeProfile,
     resetChat,
     exportProfileAsMarkdown,
+    exportBusinessProfile,
+    exportCategoryOfOneDoc,
   };
 }
 
