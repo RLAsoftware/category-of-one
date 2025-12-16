@@ -11,6 +11,8 @@ interface ChatInterfaceProps {
   clientName: string;
   onSendMessage: (content: string) => void;
   error?: string | null;
+  onSynthesize?: () => void;
+  canSynthesize?: boolean;
 }
 
 export function ChatInterface({
@@ -20,6 +22,8 @@ export function ChatInterface({
   clientName,
   onSendMessage,
   error,
+  onSynthesize,
+  canSynthesize,
 }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -113,6 +117,18 @@ export function ChatInterface({
 
       {/* Input Area */}
       <div className="border-t border-ink/10 bg-white px-4 py-4">
+        {onSynthesize && (
+          <div className="flex justify-end mb-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canSynthesize || isStreaming || isSynthesizing}
+              onClick={onSynthesize}
+            >
+              Generate Category of One profile
+            </Button>
+          </div>
+        )}
         <div className="flex gap-3 items-end">
           <div className="flex-1 relative">
             <textarea

@@ -44,6 +44,7 @@ export function Interview() {
     profile,
     initializeChat,
     sendMessage,
+    synthesizeProfile,
     resetChat,
     exportProfileAsMarkdown,
     exportBusinessProfile,
@@ -155,6 +156,8 @@ export function Interview() {
               clientName={client.name}
               onSendMessage={sendMessage}
               error={error}
+              onSynthesize={synthesizeProfile}
+              canSynthesize={messages.length > 0}
             />
           </>
         )}
