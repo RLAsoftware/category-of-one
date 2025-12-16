@@ -102,7 +102,7 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
           <Settings2 className="w-5 h-5 text-sunset" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-ink">LLM Configuration</h2>
+          <h2 className="text-lg font-semibold text-ink">Category of One configuration</h2>
           <p className="text-sm text-slate">
             View and manage the Claude model and prompts used for the Category of One interview.
           </p>
