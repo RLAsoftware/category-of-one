@@ -37,7 +37,15 @@ export interface BrandKnowledge {
   created_at: string;
 }
 
-export type InterviewStatus = 'base_questions' | 'analyzing' | 'follow_up' | 'synthesizing' | 'completed';
+// Updated to include new chat statuses
+export type InterviewStatus = 
+  | 'base_questions' 
+  | 'analyzing' 
+  | 'follow_up' 
+  | 'synthesizing' 
+  | 'completed'
+  | 'chatting'
+  | 'generating_profile';
 
 export interface BaseAnswers {
   idealReader: string;
@@ -111,3 +119,76 @@ export const BASE_QUESTIONS: BaseQuestion[] = [
   },
 ];
 
+// ============================================
+// Chat Message Types
+// ============================================
+
+export type ChatMessageRole = 'user' | 'assistant' | 'system';
+
+export interface ChatMessage {
+  id: string;
+  session_id: string;
+  role: ChatMessageRole;
+  content: string;
+  created_at: string;
+}
+
+// For local state before saving to DB
+export interface LocalChatMessage {
+  id: string;
+  role: ChatMessageRole;
+  content: string;
+  isStreaming?: boolean;
+}
+
+// ============================================
+// Category of One Profile Types
+// ============================================
+
+export interface ContrarianPosition {
+  their_belief: string;
+  mainstream_belief: string;
+}
+
+export interface GapTheyFill {
+  frustration: string;
+  desired_outcome: string;
+}
+
+export interface UniqueMethodology {
+  name: string;
+  description: string;
+  components: string[];
+}
+
+export interface Transformation {
+  before: string;
+  after: string;
+}
+
+export interface CategoryOfOneProfile {
+  id: string;
+  client_id: string;
+  session_id: string;
+  positioning_statement: string | null;
+  unique_differentiation: string | null;
+  contrarian_position: ContrarianPosition | null;
+  gap_they_fill: GapTheyFill | null;
+  unique_methodology: UniqueMethodology | null;
+  transformation: Transformation | null;
+  competitive_landscape: string | null;
+  raw_profile: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Structured profile for display and export
+export interface CategoryOfOneProfileData {
+  positioningStatement: string;
+  uniqueDifferentiation: string;
+  contrarianPosition: ContrarianPosition;
+  gapTheyFill: GapTheyFill;
+  uniqueMethodology: UniqueMethodology;
+  transformation: Transformation;
+  competitiveLandscape: string;
+}
