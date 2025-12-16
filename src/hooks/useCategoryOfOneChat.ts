@@ -24,6 +24,8 @@ interface UseCategoryOfOneChatReturn {
   synthesizeProfile: () => Promise<void>;
   resetChat: () => Promise<void>;
   exportProfileAsMarkdown: () => void;
+   exportBusinessProfile: () => void;
+   exportCategoryOfOneDoc: () => void;
 }
 
 export function useCategoryOfOneChat({ 
