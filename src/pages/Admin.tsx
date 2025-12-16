@@ -33,15 +33,12 @@ export function Admin() {
       return;
     }
     
-    // Only redirect if role is explicitly 'client'
-    if (role === 'client') {
-      console.log('Admin: Client role, redirecting to interview');
+    // If role is explicitly client or missing, keep them out of admin
+    if (role !== 'admin') {
+      console.log('Admin: Non-admin role, redirecting to interview');
       navigate('/interview', { replace: true });
       return;
     }
-    
-    // If role is null but user exists, wait for role to load
-    // Don't redirect - the role might still be loading
   }, [user, loading, role, navigate]);
 
   const handleSignOut = async () => {
@@ -59,8 +56,8 @@ export function Admin() {
     setView('list');
   };
 
-  // Show loading while auth is loading or if we have a user but no role yet
-  if (loading || (user && !role)) {
+  // Show loading while auth is loading
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream">
         <Loader2 className="w-8 h-8 text-sunset animate-spin" />
@@ -68,8 +65,8 @@ export function Admin() {
     );
   }
 
-  // If no user, show nothing (redirect will happen)
-  if (!user) {
+  // If no user or not an admin, show nothing (redirect will happen)
+  if (!user || role !== 'admin') {
     return null;
   }
 
