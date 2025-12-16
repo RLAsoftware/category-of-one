@@ -44,7 +44,6 @@ export function Interview() {
     profile,
     initializeChat,
     sendMessage,
-    synthesizeProfile,
     resetChat,
     exportProfileAsMarkdown,
     exportBusinessProfile,
@@ -102,7 +101,6 @@ export function Interview() {
             </div>
             <div>
               <span className="font-display text-lg text-ink block leading-tight">Category of One</span>
-              <span className="text-xs text-slate">Discover your unique positioning</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -156,8 +154,6 @@ export function Interview() {
               clientName={client.name}
               onSendMessage={sendMessage}
               error={error}
-              onSynthesize={synthesizeProfile}
-              canSynthesize={messages.length > 0}
             />
           </>
         )}
