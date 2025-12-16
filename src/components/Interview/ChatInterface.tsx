@@ -123,47 +123,50 @@ export function ChatInterface({
       {/* Input Area - Floating 20px from bottom */}
       <div className="fixed bottom-5 left-0 right-0 px-4 z-10">
         <div className="max-w-3xl mx-auto">
-          <div className="relative">
-            <div className="flex items-end">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 bg-white rounded-full shadow-soft-input px-4 py-2">
-                  <textarea
-                    ref={textareaRef}
-                    value={inputValue}
-                    onChange={handleTextareaChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder={
-                      isSynthesizing
-                        ? 'Creating your profile...'
-                        : isStreaming
-                        ? 'Waiting for response...'
-                        : 'Type your message...'
-                    }
-                    disabled={isStreaming || isSynthesizing}
-                    rows={1}
-                    className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-sm leading-relaxed"
-                    style={{ minHeight: '40px', maxHeight: '120px' }}
-                  />
+          {/* Soft background backdrop */}
+          <div className="bg-cream/80 backdrop-blur-sm rounded-2xl px-4 py-3 -mx-4">
+            <div className="relative">
+              <div className="flex items-end">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 bg-white rounded-full shadow-soft-input px-4 py-2">
+                    <textarea
+                      ref={textareaRef}
+                      value={inputValue}
+                      onChange={handleTextareaChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder={
+                        isSynthesizing
+                          ? 'Creating your profile...'
+                          : isStreaming
+                          ? 'Waiting for response...'
+                          : 'Type your message...'
+                      }
+                      disabled={isStreaming || isSynthesizing}
+                      rows={1}
+                      className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-sm leading-relaxed"
+                      style={{ minHeight: '40px', maxHeight: '120px' }}
+                    />
 
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={!inputValue.trim() || isStreaming || isSynthesizing}
-                    className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-tr from-sunset to-amber-400 text-white shadow-soft-input disabled:opacity-50 disabled:cursor-not-allowed transition-transform duration-150 hover:translate-y-0.5"
-                  >
-                    {isStreaming ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={!inputValue.trim() || isStreaming || isSynthesizing}
+                      className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-tr from-sunset to-amber-400 text-white shadow-soft-input disabled:opacity-50 disabled:cursor-not-allowed transition-transform duration-150 hover:translate-y-0.5"
+                    >
+                      {isStreaming ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <p className="text-[11px] text-slate mt-2 text-center">
-              Press Enter to send, Shift+Enter for new line
-            </p>
+              <p className="text-[11px] text-slate mt-2 text-center">
+                Press Enter to send, Shift+Enter for new line
+              </p>
+            </div>
           </div>
         </div>
       </div>
