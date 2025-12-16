@@ -58,7 +58,7 @@ export function useAuth() {
         } = await withTimeout(supabase.auth.getSession(), SESSION_INIT_TIMEOUT_MS);
 
         if (error) {
-          setState((prev) => ({ ...prev, loading: false, error: error.message }));
+          setState((prev) => ({ ...prev, loading: false, error: error.message, sessionTimedOut: false }));
           return;
         }
 
@@ -70,9 +70,10 @@ export function useAuth() {
             role,
             loading: false,
             error: null,
+            sessionTimedOut: false,
           });
         } else {
-          setState((prev) => ({ ...prev, loading: false }));
+          setState((prev) => ({ ...prev, loading: false, sessionTimedOut: false }));
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
