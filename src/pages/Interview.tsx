@@ -188,7 +188,6 @@ export function Interview() {
               messages={messages}
               isStreaming={isStreaming}
               isSynthesizing={isSynthesizing}
-              clientName={client.name}
               onSendMessage={sendMessage}
               error={error}
             />

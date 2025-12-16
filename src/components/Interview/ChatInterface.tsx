@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send, Loader2 } from 'lucide-react';
-import { Button } from '../ui';
 import { ChatMessage } from './ChatMessage';
 import type { LocalChatMessage } from '../../lib/types';
 
@@ -8,7 +7,6 @@ interface ChatInterfaceProps {
   messages: LocalChatMessage[];
   isStreaming: boolean;
   isSynthesizing: boolean;
-  clientName: string;
   onSendMessage: (content: string) => void;
   error?: string | null;
 }
@@ -17,7 +15,6 @@ export function ChatInterface({
   messages,
   isStreaming,
   isSynthesizing,
-  clientName,
   onSendMessage,
   error,
 }: ChatInterfaceProps) {
@@ -82,8 +79,7 @@ export function ChatInterface({
         {messages.map((message) => (
           <ChatMessage 
             key={message.id} 
-            message={message} 
-            clientName={clientName}
+            message={message}
           />
         ))}
 

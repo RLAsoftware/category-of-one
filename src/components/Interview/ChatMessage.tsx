@@ -3,10 +3,9 @@ import type { LocalChatMessage } from '../../lib/types';
 
 interface ChatMessageProps {
   message: LocalChatMessage;
-  clientName: string;
 }
 
-export function ChatMessage({ message, clientName }: ChatMessageProps) {
+export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
   
   // Remove the [SYNTHESIS_READY] marker from displayed content
