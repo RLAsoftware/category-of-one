@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card, Button } from '../ui';
 import { BrandKnowledgeEditor } from './BrandKnowledgeEditor';
-import type { Client, BrandKnowledge, StyleProfile } from '../../lib/types';
+import type { Client, BrandKnowledge, StyleProfile, CategoryOfOneProfile } from '../../lib/types';
 import { 
   ArrowLeft, 
   Send, 
@@ -26,6 +26,7 @@ interface ClientDetailProps {
 export function ClientDetail({ client, onBack }: ClientDetailProps) {
   const [brandKnowledge, setBrandKnowledge] = useState<BrandKnowledge[]>([]);
   const [profiles, setProfiles] = useState<StyleProfile[]>([]);
+  const [categoryProfiles, setCategoryProfiles] = useState<CategoryOfOneProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
   const [editingKnowledge, setEditingKnowledge] = useState<BrandKnowledge | null>(null);
@@ -39,13 +40,15 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
   const loadClientData = async () => {
     setLoading(true);
     
-    const [knowledgeRes, profilesRes] = await Promise.all([
+    const [knowledgeRes, profilesRes, categoryProfilesRes] = await Promise.all([
       supabase.from('brand_knowledge').select('*').eq('client_id', client.id).order('created_at'),
       supabase.from('style_profiles').select('*').eq('client_id', client.id).order('created_at', { ascending: false }),
+      supabase.from('category_of_one_profiles').select('*').eq('client_id', client.id).order('created_at', { ascending: false }),
     ]);
 
     setBrandKnowledge(knowledgeRes.data || []);
     setProfiles(profilesRes.data || []);
+    setCategoryProfiles(categoryProfilesRes.data || []);
     setLoading(false);
   };
 
@@ -95,6 +98,21 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
   const handleDeleteKnowledge = async (id: string) => {
     await supabase.from('brand_knowledge').delete().eq('id', id);
     loadClientData();
+  };
+
+  const latestCategoryProfile = categoryProfiles[0] || null;
+
+  const downloadMarkdown = (filename: string, content?: string | null) => {
+    if (!content) return;
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (showEditor) {
@@ -186,12 +204,12 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
         </div>
       </Card>
 
-      {/* Brand Knowledge */}
+      {/* Category of One Outputs & Brand Knowledge */}
       <Card variant="bordered" className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-sunset" />
-            <h2 className="text-lg">Brand Knowledge</h2>
+            <h2 className="text-lg">Brand Knowledge & Outputs</h2>
           </div>
           <Button
             size="sm"
@@ -208,46 +226,113 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
               <div key={i} className="h-16 bg-ink/5 rounded-lg animate-pulse" />
             ))}
           </div>
-        ) : brandKnowledge.length === 0 ? (
-          <p className="text-slate text-center py-8">
-            No brand knowledge added yet. Add documents to provide context for the AI interview.
-          </p>
         ) : (
-          <div className="space-y-2">
-            {brandKnowledge.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-cream hover:bg-cream/70 transition-colors"
-              >
-                <div>
-                  <h3 className="font-medium text-ink">{doc.title}</h3>
-                  <p className="text-sm text-slate">
-                    {doc.content.substring(0, 100)}...
-                  </p>
-                </div>
-                <div className="flex gap-2">
+          <>
+            {/* Category of One outputs */}
+            {latestCategoryProfile ? (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-ink mb-2">
+                  Category of One Outputs
+                </h3>
+                <p className="text-xs text-slate mb-3">
+                  These markdown files were generated from the latest completed interview.
+                </p>
+                <div className="flex flex-wrap gap-3">
                   <Button
                     size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEditingKnowledge(doc);
-                      setShowEditor(true);
-                    }}
+                    variant="secondary"
+                    onClick={() =>
+                      downloadMarkdown(
+                        `category-of-one-full-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
+                        latestCategoryProfile.raw_profile
+                      )
+                    }
                   >
-                    Edit
+                    <FileText className="w-4 h-4 mr-1" />
+                    Full profile
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="text-error hover:text-error"
-                    onClick={() => handleDeleteKnowledge(doc.id)}
+                    variant="secondary"
+                    onClick={() =>
+                      downloadMarkdown(
+                        `business-profile-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
+                        latestCategoryProfile.business_profile_md
+                      )
+                    }
                   >
-                    Delete
+                    <FileText className="w-4 h-4 mr-1" />
+                    business-profile.md
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                      downloadMarkdown(
+                        `category-of-one-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
+                        latestCategoryProfile.category_of_one_md || latestCategoryProfile.raw_profile
+                      )
+                    }
+                  >
+                    <FileText className="w-4 h-4 mr-1" />
+                    category-of-one.md
                   </Button>
                 </div>
               </div>
-            ))}
-          </div>
+            ) : (
+              <p className="text-xs text-slate mb-6">
+                No Category of One outputs yet. Once the client completes their interview, the
+                generated markdown files will appear here.
+              </p>
+            )}
+
+            <div className="border-t border-ink/10 pt-4">
+              <h3 className="text-sm font-semibold text-ink mb-2">Brand Knowledge Documents</h3>
+
+              {brandKnowledge.length === 0 ? (
+                <p className="text-slate text-center py-4 text-sm">
+                  No brand knowledge added yet. Add documents to provide context for the AI
+                  interview.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {brandKnowledge.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-cream hover:bg-cream/70 transition-colors"
+                    >
+                      <div>
+                        <h3 className="font-medium text-ink">{doc.title}</h3>
+                        <p className="text-sm text-slate">
+                          {doc.content.substring(0, 100)}...
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingKnowledge(doc);
+                            setShowEditor(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-error hover:text-error"
+                          onClick={() => handleDeleteKnowledge(doc.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </Card>
 
