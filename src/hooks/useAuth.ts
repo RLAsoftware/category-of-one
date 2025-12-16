@@ -11,6 +11,26 @@ interface AuthState {
   error: string | null;
 }
 
+const SESSION_INIT_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('Session check timed out'));
+    }, ms);
+
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -30,10 +50,13 @@ export function useAuth() {
 
     const initAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+          error,
+        } = await withTimeout(supabase.auth.getSession(), SESSION_INIT_TIMEOUT_MS);
+
         if (error) {
-          setState(prev => ({ ...prev, loading: false, error: error.message }));
+          setState((prev) => ({ ...prev, loading: false, error: error.message }));
           return;
         }
 
@@ -47,11 +70,15 @@ export function useAuth() {
             error: null,
           });
         } else {
-          setState(prev => ({ ...prev, loading: false }));
+          setState((prev) => ({ ...prev, loading: false }));
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
-        setState(prev => ({ ...prev, loading: false, error: 'Failed to initialize auth' }));
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: 'Failed to check session, please sign in again.',
+        }));
       }
     };
 

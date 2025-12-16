@@ -9,6 +9,7 @@ export function Login() {
     user,
     role,
     loading,
+    error,
     signInWithMagicLink,
     signInWithPassword,
     sendPasswordReset,
@@ -54,9 +55,14 @@ export function Login() {
             <h1 className="font-primary text-4xl mb-4">Category Of One</h1>
           </div>
 
-          {loading && (
+          {loading && !error && (
             <p className="text-center text-xs text-slate mb-3">
               Checking your session…
+            </p>
+          )}
+          {error && (
+            <p className="text-center text-xs text-error mb-3">
+              {error} You can still sign in below.
             </p>
           )}
           
