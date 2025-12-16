@@ -66,9 +66,10 @@ export function ChatInterface({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] max-h-[700px]">
+    <div className="flex flex-col min-h-[calc(100vh-180px)]">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="max-w-3xl mx-auto space-y-6">
         {messages.length === 0 && !isStreaming && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-slate">
@@ -108,52 +109,67 @@ export function ChatInterface({
           </div>
         )}
 
-        <div ref={messagesEndRef} />
+          {/* Typing indicator spacer */}
+          {isStreaming && !isSynthesizing && (
+            <div className="flex items-center gap-2 text-slate text-xs">
+              <div className="flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 shadow-soft-message border border-white/60">
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-ink/10 bg-white px-4 py-4">
-        <div className="flex gap-3 items-end">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                isSynthesizing 
-                  ? "Creating your profile..." 
-                  : isStreaming 
-                    ? "Waiting for response..." 
-                    : "Type your message..."
-              }
-              disabled={isStreaming || isSynthesizing}
-              rows={1}
-              className="w-full resize-none rounded-xl border border-ink/20 bg-cream/50 px-4 py-3 pr-12 
-                         text-ink placeholder:text-slate/50 
-                         focus:outline-none focus:ring-2 focus:ring-sunset/30 focus:border-sunset
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-all duration-200"
-              style={{ minHeight: '48px', maxHeight: '200px' }}
-            />
+      <div className="px-4 pb-6 pt-2">
+        <div className="max-w-3xl mx-auto">
+          <div className="relative">
+            <div className="flex items-end">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 bg-white rounded-full shadow-soft-input px-4 py-2">
+                  <textarea
+                    ref={textareaRef}
+                    value={inputValue}
+                    onChange={handleTextareaChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder={
+                      isSynthesizing
+                        ? 'Creating your profile...'
+                        : isStreaming
+                        ? 'Waiting for response...'
+                        : 'Type your message...'
+                    }
+                    disabled={isStreaming || isSynthesizing}
+                    rows={1}
+                    className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-sm leading-relaxed"
+                    style={{ minHeight: '40px', maxHeight: '120px' }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={!inputValue.trim() || isStreaming || isSynthesizing}
+                    className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-tr from-sunset to-amber-400 text-white shadow-soft-input disabled:opacity-50 disabled:cursor-not-allowed transition-transform duration-150 hover:translate-y-0.5"
+                  >
+                    {isStreaming ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate mt-2 text-center">
+              Press Enter to send, Shift+Enter for new line
+            </p>
           </div>
-          
-          <Button
-            onClick={handleSubmit}
-            disabled={!inputValue.trim() || isStreaming || isSynthesizing}
-            className="flex-shrink-0 h-12 w-12 !p-0 rounded-xl"
-          >
-            {isStreaming ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </Button>
         </div>
-        
-        <p className="text-xs text-slate mt-2 text-center">
-          Press Enter to send, Shift+Enter for new line
-        </p>
       </div>
     </div>
   );

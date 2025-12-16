@@ -54,9 +54,9 @@ export function Interview() {
     exportProfileAsMarkdown,
     exportBusinessProfile,
     exportCategoryOfOneDoc,
-  } = useCategoryOfOneChat({ 
-    clientId: client?.id || '', 
-    clientName: client?.name || '' 
+  } = useCategoryOfOneChat({
+    clientId: client?.id || '',
+    clientName: client?.name || '',
   });
 
   // Initialize chat when client is loaded
@@ -96,23 +96,53 @@ export function Interview() {
 
   const isCompleted = session?.status === 'completed' && profile;
 
+  const getProgressPercentage = () => {
+    if (!session) return 0;
+    if (session.status === 'completed') return 100;
+    if (session.status === 'generating_profile') return 80;
+    const chatDepth = Math.min(messages.length, 18);
+    return Math.round((chatDepth / 18) * 70);
+  };
+
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream flex flex-col">
       {/* Header */}
-      <header className="py-4 px-6 border-b border-ink/5 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <header className="py-4 px-6 border-b border-ink/5 bg-white/80 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sunset to-amber-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sunset to-amber-500 flex items-center justify-center shadow-md">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="font-display text-lg text-ink block leading-tight">Category of One</span>
+              <span className="font-display text-lg text-ink block leading-tight">
+                Category of One
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-slate hidden sm:block">
-              Welcome, {client.name}
-            </span>
+
+          {/* Context pill / progress */}
+          <div className="hidden sm:flex flex-1 items-center justify-center">
+            <div className="px-4 py-1.5 rounded-full bg-white/70 border border-white/60 shadow-sm flex items-center gap-3">
+              <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate">
+                Refining Your Story
+              </span>
+              <div className="h-1 w-24 rounded-full bg-cream overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-sunset to-amber-400 transition-all duration-500"
+                  style={{ width: `${getProgressPercentage()}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-xs text-slate/70">Welcome back</span>
+              <span className="text-sm font-medium text-ink">{client.name}</span>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-sunset/15 text-sunset flex items-center justify-center text-xs font-medium">
+              {client.name.charAt(0).toUpperCase()}
+            </div>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="w-4 h-4" />
             </Button>
@@ -121,8 +151,9 @@ export function Interview() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto">
-        {isLoading ? (
+      <main className="flex-1">
+        <div className="max-w-5xl mx-auto flex flex-col h-full">
+          {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <Loader2 className="w-8 h-8 text-sunset animate-spin mx-auto mb-4" />
@@ -163,6 +194,7 @@ export function Interview() {
             />
           </>
         )}
+        </div>
       </main>
     </div>
   );
