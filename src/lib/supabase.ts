@@ -93,18 +93,24 @@ export async function updateLLMConfig(
 export async function isEmailInvited(email: string): Promise<boolean> {
   const normalizedEmail = email.toLowerCase().trim();
   
+  console.log('[isEmailInvited] Checking authorization for:', normalizedEmail);
+  
   // Use database function to check if email is authorized
   // This checks: clients table, admin_invites table, and user_roles
   const { data, error } = await supabase.rpc('check_email_authorized', {
     user_email: normalizedEmail
   });
   
+  console.log('[isEmailInvited] RPC response:', { data, error });
+  
   if (error) {
-    console.error('Error checking email authorization:', error);
+    console.error('[isEmailInvited] Error checking email authorization:', error);
     // On error, DENY access for security - do not allow unauthorized attempts
     return false;
   }
   
-  return data === true;
+  const isAuthorized = data === true;
+  console.log('[isEmailInvited] Result:', isAuthorized);
+  return isAuthorized;
 }
 
