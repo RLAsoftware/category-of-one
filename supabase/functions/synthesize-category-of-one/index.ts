@@ -315,6 +315,65 @@ function extractJSON(content: string): string {
   return jsonContent.trim();
 }
 
+function createMinimalProfile(clientName: string): CategoryOfOneProfile {
+  return {
+    client_name: clientName,
+    business_name: null,
+    positioning_statement: {
+      who: "Not synthesized",
+      what: "Not synthesized",
+      how: "Not synthesized",
+      full_statement: "Profile generation failed - needs review"
+    },
+    unique_differentiation: null,
+    confluence: {
+      megatrends: [],
+      named_phenomenon: null,
+      why_now_summary: "Not synthesized"
+    },
+    contrarian_approach: {
+      conventional_frustration: "Not synthesized",
+      where_they_break_convention: "Not synthesized",
+      contrarian_beliefs: [],
+      mind_share_word: null
+    },
+    all_roads_story: {
+      mercenary_story: "Not synthesized",
+      missionary_story: "Not synthesized",
+      critical_combo: []
+    },
+    transformation: {
+      before: {
+        frustrations: [],
+        failed_alternatives: []
+      },
+      after: {
+        outcomes: [],
+        what_becomes_possible: "Not synthesized"
+      },
+      client_example: null
+    },
+    proof_points: {
+      client_results: [],
+      testimonials: [],
+      credentials: [],
+      media_and_publications: [],
+      awards_and_recognition: [],
+      experience_metrics: null
+    },
+    unique_methodology: {
+      name: null,
+      description: null,
+      steps: []
+    },
+    voice_and_language: {
+      distinctive_phrases: [],
+      tone_notes: "Not synthesized"
+    },
+    competitive_landscape: null
+  };
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -411,10 +470,13 @@ ${userPrompt}`;
           synthesisError = null; // Success on retry
         } catch (retryError) {
           synthesisError = `Retry also failed: ${retryError.message}`;
-          throw new Error(synthesisError);
+          console.error(synthesisError);
+          // Create minimal profile for error state
+          profile = createMinimalProfile(clientName);
         }
       } else {
-        throw new Error(synthesisError);
+        // Create minimal profile for error state
+        profile = createMinimalProfile(clientName);
       }
     }
 

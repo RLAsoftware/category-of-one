@@ -172,7 +172,7 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
                     setModel(e.target.value);
                     setSaved(false);
                   }}
-                  placeholder="claude-sonnet-4-20250514"
+                  placeholder="claude-sonnet-4-20241022"
                   disabled={!isAdmin}
                 />
               )}
