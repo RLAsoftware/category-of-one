@@ -74,12 +74,12 @@ export function useCategoryOfOneChat({
     setError(null);
 
     try {
-      // Check for existing session with chat status
+      // Check for existing IN-PROGRESS session (exclude completed)
       const { data: existingSession, error: sessionError } = await supabase
         .from('interview_sessions')
         .select('*')
         .eq('client_id', clientId)
-        .in('status', ['chatting', 'generating_profile', 'completed'])
+        .in('status', ['chatting', 'generating_profile'])
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
