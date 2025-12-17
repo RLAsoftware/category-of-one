@@ -26,8 +26,6 @@ if (supabaseUrl !== EXPECTED_SUPABASE_URL) {
   );
 }
 
-console.log('✅ Connected to correct Supabase project:', supabaseUrl);
-
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function getUserRole(userId: string) {
@@ -108,8 +106,6 @@ export async function updateLLMConfig(
 export async function isEmailInvited(email: string): Promise<boolean> {
   const normalizedEmail = email.toLowerCase().trim();
   
-  console.log('[isEmailInvited] Checking authorization for:', normalizedEmail);
-  
   // Check clients table
   const { data: clientData, error: clientError } = await supabase
     .from('clients')
@@ -118,11 +114,10 @@ export async function isEmailInvited(email: string): Promise<boolean> {
     .maybeSingle();
   
   if (clientError && clientError.code !== 'PGRST116') {
-    console.error('[isEmailInvited] Error checking clients:', clientError);
+    console.error('Error checking clients table:', clientError);
   }
   
   if (clientData) {
-    console.log('[isEmailInvited] Found in clients table');
     return true;
   }
   
@@ -134,15 +129,13 @@ export async function isEmailInvited(email: string): Promise<boolean> {
     .maybeSingle();
   
   if (adminError && adminError.code !== 'PGRST116') {
-    console.error('[isEmailInvited] Error checking admin_invites:', adminError);
+    console.error('Error checking admin_invites table:', adminError);
   }
   
   if (adminData) {
-    console.log('[isEmailInvited] Found in admin_invites table');
     return true;
   }
   
-  console.log('[isEmailInvited] Not authorized - not found in clients or admin_invites');
   return false;
 }
 
