@@ -73,7 +73,6 @@ export function useAuth() {
             sessionTimedOut: false,
           });
         } else {
-          // No session found - set loading to false immediately
           setState((prev) => ({ ...prev, loading: false, sessionTimedOut: false }));
         }
       } catch (err) {
@@ -87,14 +86,6 @@ export function useAuth() {
         }));
       }
     };
-
-    // Check for existing session immediately (synchronous if cached)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        // If there's definitely no session, clear loading immediately
-        setState((prev) => ({ ...prev, loading: false }));
-      }
-    });
 
     initAuth();
 
