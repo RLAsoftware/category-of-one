@@ -1,4 +1,4 @@
-import { Download, RefreshCw, Target, Sparkles, Zap, Users, Lightbulb, TrendingUp, Trophy, ArrowLeft, Compass, Briefcase, MessageCircle } from 'lucide-react';
+import { Download, RefreshCw, Target, Sparkles, Users, Lightbulb, TrendingUp, Trophy, ArrowLeft, Compass, Briefcase, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../ui';
 import type { CategoryOfOneProfile } from '../../lib/types';

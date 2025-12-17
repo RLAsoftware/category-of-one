@@ -38,7 +38,9 @@ export function ProfileCard({ profile, sessionId }: ProfileCardProps) {
           
           {profile.positioning_statement && (
             <p className="text-ink leading-relaxed mb-4 line-clamp-3">
-              {profile.positioning_statement}
+              {typeof profile.positioning_statement === 'string' 
+                ? profile.positioning_statement 
+                : profile.positioning_statement.full_statement}
             </p>
           )}
           

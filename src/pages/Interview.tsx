@@ -7,12 +7,12 @@ import { ChatInterface } from '../components/Interview/ChatInterface';
 import { ProfileResult } from '../components/Interview/ProfileResult';
 import { Button } from '../components/ui';
 import { LogOut, Loader2, MessageSquare, ArrowLeft, RefreshCw } from 'lucide-react';
-import type { Client, UserRole } from '../lib/types';
+import type { Client } from '../lib/types';
 
 export function Interview() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId?: string }>();
-  const { user, loading: authLoading, signOut, sessionTimedOut, userRole } = useAuth();
+  const { user, loading: authLoading, signOut, sessionTimedOut, role } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
   const [showStartFromScratchModal, setShowStartFromScratchModal] = useState(false);
@@ -207,7 +207,7 @@ export function Interview() {
               messageCount={messageCount}
               isNearTurnLimit={isNearTurnLimit}
               isAtTurnLimit={isAtTurnLimit}
-              userRole={userRole}
+              userRole={role}
               sessionStatus={session?.status}
             />
           </>
