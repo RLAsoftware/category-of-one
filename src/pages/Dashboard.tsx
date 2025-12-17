@@ -10,7 +10,7 @@ import { ProfileCard } from '../components/Dashboard/ProfileCard';
 import { DeleteSessionModal } from '../components/Dashboard/DeleteSessionModal';
 import { EmptyState } from '../components/Dashboard/EmptyState';
 import { ToastContainer } from '../components/ui/Toast';
-import { LogOut, Loader2, MessageSquare, Plus, Search } from 'lucide-react';
+import { LogOut, Loader2, MessageSquare, Plus } from 'lucide-react';
 import type { Client } from '../lib/types';
 
 export function Dashboard() {
@@ -25,8 +25,6 @@ export function Dashboard() {
     sessions,
     latestProfile,
     loading: dashboardLoading,
-    searchQuery,
-    setSearchQuery,
     deleteSession,
     refreshSessions,
   } = useDashboard({
@@ -164,7 +162,7 @@ export function Dashboard() {
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 text-sunset animate-spin" />
             </div>
-          ) : sessions.length === 0 && !searchQuery ? (
+          ) : sessions.length === 0 ? (
             // Empty State for first-time users
             <EmptyState onStartInterview={handleStartNewInterview} />
           ) : (
@@ -191,20 +189,6 @@ export function Dashboard() {
                   <Plus className="w-5 h-5" />
                   Start New Interview
                 </Button>
-              </div>
-
-              {/* Search Bar */}
-              <div className="mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate" />
-                  <input
-                    type="text"
-                    placeholder="Search interviews..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-ink/10 focus:border-sunset focus:outline-none focus:ring-2 focus:ring-sunset/20 transition-colors"
-                  />
-                </div>
               </div>
 
               {/* Session List */}

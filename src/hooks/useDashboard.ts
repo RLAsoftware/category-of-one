@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, getClientSessions, getDeletedSessions, getLatestProfileForClient, softDeleteSession, restoreSession, searchSessions } from '../lib/supabase';
+import { supabase, getClientSessions, getDeletedSessions, getLatestProfileForClient, softDeleteSession, restoreSession } from '../lib/supabase';
 import type { InterviewSession, CategoryOfOneProfile } from '../lib/types';
 
 interface UseDashboardOptions {
@@ -11,7 +11,6 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
   const [deletedSessions, setDeletedSessions] = useState<InterviewSession[]>([]);
   const [latestProfile, setLatestProfile] = useState<CategoryOfOneProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch all sessions
   const fetchSessions = useCallback(async () => {
@@ -19,15 +18,7 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     
     setLoading(true);
     try {
-      let sessionData: InterviewSession[];
-      
-      // Apply search if query exists
-      if (searchQuery.trim()) {
-        sessionData = await searchSessions(clientId, searchQuery);
-      } else {
-        sessionData = await getClientSessions(clientId);
-      }
-      
+      const sessionData = await getClientSessions(clientId);
       setSessions(sessionData);
     } catch (error) {
       console.error('Error fetching sessions:', error);
@@ -35,7 +26,7 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     } finally {
       setLoading(false);
     }
-  }, [clientId, searchQuery]);
+  }, [clientId]);
 
   // Fetch deleted sessions for "Recently Deleted" section
   const fetchDeletedSessions = useCallback(async () => {
@@ -137,20 +128,12 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     };
   }, [clientId, fetchSessions, fetchDeletedSessions, fetchLatestProfile]);
 
-  // Re-fetch when search changes
-  useEffect(() => {
-    if (clientId) {
-      fetchSessions();
-    }
-  }, [searchQuery, fetchSessions, clientId]);
 
   return {
     sessions,
     deletedSessions,
     latestProfile,
     loading,
-    searchQuery,
-    setSearchQuery,
     deleteSession,
     restoreSession: restoreDeletedSession,
     refreshSessions: fetchSessions,
