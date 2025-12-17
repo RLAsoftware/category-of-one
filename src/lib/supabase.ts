@@ -94,16 +94,15 @@ export async function isEmailInvited(email: string): Promise<boolean> {
   const normalizedEmail = email.toLowerCase().trim();
   
   // Use database function to check if email is authorized
-  // This checks: clients table, admin_invites table, and auth.users
+  // This checks: clients table, admin_invites table, and user_roles
   const { data, error } = await supabase.rpc('check_email_authorized', {
     user_email: normalizedEmail
   });
   
   if (error) {
     console.error('Error checking email authorization:', error);
-    // If there's an error checking, allow the auth attempt to proceed
-    // and let Supabase Auth handle it
-    return true;
+    // On error, DENY access for security - do not allow unauthorized attempts
+    return false;
   }
   
   return data === true;
