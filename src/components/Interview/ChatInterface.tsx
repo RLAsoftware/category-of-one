@@ -120,15 +120,15 @@ export function ChatInterface({
         </div>
       </div>
 
-      {/* Input Area - Floating 20px from bottom */}
-      <div className="fixed bottom-5 left-0 right-0 px-4 z-10">
+      {/* Input Area - Flush with bottom */}
+      <div className="fixed bottom-0 left-0 right-0 px-4 z-10">
         <div className="max-w-3xl mx-auto">
           {/* Soft background backdrop */}
           <div className="bg-cream/80 backdrop-blur-sm rounded-2xl px-4 py-3 -mx-4">
             <div className="relative">
               <div className="flex items-end">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 bg-white rounded-full shadow-soft-input px-4 py-2">
+                  <div className="flex items-center gap-3 bg-white rounded-full shadow-soft-input px-6 py-3">
                     <textarea
                       ref={textareaRef}
                       value={inputValue}
@@ -143,7 +143,7 @@ export function ChatInterface({
                       }
                       disabled={isStreaming || isSynthesizing}
                       rows={1}
-                      className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-sm leading-relaxed"
+                      className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-sm leading-relaxed py-1"
                       style={{ minHeight: '40px', maxHeight: '120px' }}
                     />
 
