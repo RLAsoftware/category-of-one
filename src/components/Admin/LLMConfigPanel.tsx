@@ -80,7 +80,11 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
   }, []);
 
   const handleSave = async () => {
-    if (!config || !isAdmin) return;
+    console.log('[handleSave] Starting save...');
+    if (!config || !isAdmin) {
+      console.log('[handleSave] Blocked: config or isAdmin check failed', { config, isAdmin });
+      return;
+    }
     if (!model.trim()) {
       setError('Model name is required.');
       return;
@@ -90,24 +94,32 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
       return;
     }
 
+    console.log('[handleSave] Validation passed, setting saving state...');
     setSaving(true);
     setError(null);
     setSaved(false);
 
     try {
+      console.log('[handleSave] Creating promises...');
       // Add timeout to prevent infinite spinning
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Save request timed out after 30 seconds')), 30000);
+        setTimeout(() => {
+          console.log('[handleSave] Timeout reached!');
+          reject(new Error('Save request timed out after 30 seconds'));
+        }, 30000);
       });
 
+      console.log('[handleSave] About to call updateLLMConfig...');
       const updatePromise = updateLLMConfig('category_of_one', {
         model: model.trim(),
         chat_system_prompt: chatPrompt,
         synthesis_system_prompt: synthesisPrompt,
       });
 
+      console.log('[handleSave] Waiting for race...');
       const updated = await Promise.race([updatePromise, timeoutPromise]);
       
+      console.log('[handleSave] Got result:', updated);
       if (updated) {
         setConfig(updated);
         setSaved(true);
@@ -118,6 +130,7 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
       console.error('LLM Config save error:', err);
       setError(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {
+      console.log('[handleSave] Cleaning up...');
       setSaving(false);
     }
   };
