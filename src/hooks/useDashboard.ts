@@ -14,7 +14,10 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
 
   // Fetch all sessions
   const fetchSessions = useCallback(async () => {
-    if (!clientId) return;
+    if (!clientId) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
