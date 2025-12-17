@@ -65,12 +65,17 @@ export function Interview() {
 
   // Initialize or load chat when client is loaded
   useEffect(() => {
-    if (client && !session) {
-      if (sessionId) {
-        // Load existing session
+    if (!client) return;
+
+    // Check if we need to load a different session
+    if (sessionId) {
+      // Load session if: no session loaded yet OR sessionId changed
+      if (!session || session.id !== sessionId) {
         loadSession(sessionId);
-      } else {
-        // Create new session
+      }
+    } else {
+      // Create new session only if no session exists
+      if (!session) {
         initializeChat();
       }
     }
