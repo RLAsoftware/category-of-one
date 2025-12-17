@@ -62,7 +62,7 @@ export function Login() {
           )}
           {error && (
             <p className="text-center text-xs text-error mb-3">
-              {error} You can still sign in below.
+              {error.includes('No user account found') ? error : `${error} You can still sign in below.`}
             </p>
           )}
           

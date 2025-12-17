@@ -125,7 +125,7 @@ export function LoginForm({ onMagicLink, onPasswordLogin, onPasswordReset }: Log
             autoFocus
           />
           
-          {error && (
+          {error && !error.includes('No user account found') && (
             <p className="text-sm text-error text-center">{error}</p>
           )}
 
@@ -174,7 +174,7 @@ export function LoginForm({ onMagicLink, onPasswordLogin, onPasswordReset }: Log
             required
           />
           
-          {error && (
+          {error && !error.includes('No user account found') && (
             <p className="text-sm text-error text-center">{error}</p>
           )}
 
