@@ -96,7 +96,7 @@ export function Interview() {
   const handleConfirmStartFromScratch = async () => {
     await resetChat();
     setShowStartFromScratchModal(false);
-    navigate('/dashboard');
+    // Stay on the same page - the conversation has been wiped clean
   };
 
   const handleCancelStartFromScratch = () => {
@@ -233,7 +233,7 @@ export function Interview() {
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-ink mb-1">Start from Scratch?</h2>
                 <p className="text-sm text-slate">
-                  This will archive your current conversation and start a new interview session. Your current session will still be available in your dashboard.
+                  This will delete all messages in this conversation and restart fresh. This action cannot be undone.
                 </p>
               </div>
             </div>
@@ -243,7 +243,7 @@ export function Interview() {
                 Cancel
               </Button>
               <Button onClick={handleConfirmStartFromScratch} variant="primary">
-                Start New Interview
+                Clear & Restart
               </Button>
             </div>
           </div>

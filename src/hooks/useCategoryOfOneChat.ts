@@ -537,34 +537,49 @@ export function useCategoryOfOneChat({
 
   // Reset and start a new chat
   const resetChat = useCallback(async () => {
+    if (!session) return;
+
     setIsLoading(true);
     setError(null);
-    setMessages([]);
-    setProfile(null);
 
     try {
-      // Create new session
-      const { data: newSession, error: createError } = await supabase
+      // Delete all messages from the current session
+      await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('session_id', session.id);
+
+      // Reset session status and message count
+      await supabase
         .from('interview_sessions')
-        .insert({
-          client_id: clientId,
+        .update({
           status: 'chatting',
+          message_count: 0,
+          flagged_for_review: false,
+          completed_at: null,
         })
-        .select()
-        .single();
+        .eq('id', session.id);
 
-      if (createError) throw createError;
-      setSession(newSession);
+      // Clear local state
+      setMessages([]);
+      setProfile(null);
+      setSession(prev => prev ? {
+        ...prev,
+        status: 'chatting',
+        message_count: 0,
+        flagged_for_review: false,
+        completed_at: null,
+      } : null);
 
-      // Start new conversation
-      await startNewConversation(newSession.id);
+      // Start fresh conversation in the same session
+      await startNewConversation(session.id);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reset chat');
     } finally {
       setIsLoading(false);
     }
-  }, [clientId, clientName]);
+  }, [session, clientName]);
 
   // Export profile as markdown file
   const exportProfileAsMarkdown = useCallback(() => {
