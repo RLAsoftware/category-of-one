@@ -18,28 +18,82 @@ interface RequestBody {
   clientName: string;
 }
 
+interface PositioningStatement {
+  who: string;
+  what: string;
+  how: string;
+  full_statement: string;
+}
+
+interface Megatrend {
+  name: string;
+  description: string;
+}
+
+interface Confluence {
+  megatrends: Megatrend[];
+  named_phenomenon: string | null;
+  why_now_summary: string;
+}
+
+interface ContrarianApproach {
+  conventional_frustration: string;
+  where_they_break_convention: string;
+  contrarian_beliefs: string[];
+  mind_share_word: string | null;
+}
+
+interface AllRoadsStory {
+  mercenary_story: string;
+  missionary_story: string;
+  critical_combo: string[];
+}
+
+interface DetailedTransformation {
+  before: {
+    frustrations: string[];
+    failed_alternatives: string[];
+  };
+  after: {
+    outcomes: string[];
+    what_becomes_possible: string;
+  };
+  client_example: string | null;
+}
+
+interface ProofPoints {
+  client_results: string[];
+  testimonials: string[];
+  credentials: string[];
+  media_and_publications: string[];
+  awards_and_recognition: string[];
+  experience_metrics: string | null;
+}
+
+interface UniqueMethodology {
+  name: string | null;
+  steps_or_components: string[];
+  what_makes_it_distinctive: string | null;
+}
+
+interface VoiceAndLanguage {
+  distinctive_phrases: string[];
+  tone_notes: string | null;
+}
+
 interface CategoryOfOneProfile {
-  positioning_statement: string;
-  unique_differentiation: string;
-  contrarian_position: {
-    their_belief: string;
-    mainstream_belief: string;
-  };
-  gap_they_fill: {
-    frustration: string;
-    desired_outcome: string;
-  };
-  unique_methodology: {
-    name: string;
-    description: string;
-    components: string[];
-  };
-  transformation: {
-    before: string;
-    after: string;
-  };
-  competitive_landscape: string;
-  raw_profile: string;
+  client_name: string;
+  business_name: string | null;
+  positioning_statement: PositioningStatement;
+  unique_differentiation: string | null;
+  confluence: Confluence;
+  contrarian_approach: ContrarianApproach;
+  all_roads_story: AllRoadsStory;
+  transformation: DetailedTransformation;
+  proof_points: ProofPoints;
+  unique_methodology: UniqueMethodology;
+  voice_and_language: VoiceAndLanguage;
+  competitive_landscape: string | null;
 }
 
 interface LLMConfig {
@@ -54,41 +108,114 @@ interface LLMConfig {
 
 const DEFAULT_MODEL = "claude-sonnet-4-20250514";
 
-const DEFAULT_SYNTHESIS_PROMPT = `You are a Brand Strategy expert. Analyze the following conversation and extract a comprehensive "Category of One" profile.
+const DEFAULT_SYNTHESIS_PROMPT = `You are a senior business strategist synthesizing an interview transcript into a Category-of-One positioning document.
 
-Based on the conversation, create a detailed profile with EXACTLY this JSON structure:
+You do NOT invent information.
+You do NOT exaggerate.
+You do NOT use hype, cheerleading, or marketing language.
+Your tone is measured, professional, and precise—like an internal strategy memo.
 
+If information is missing or unclear, explicitly state: "Not discussed in interview."
+
+---
+
+## TASK
+
+Distill the interview into a canonical Category-of-One profile that accurately reflects:
+- WHY NOW (Confluence of Events)
+- WHY THIS (Contrarian Approach)
+- WHY YOU (Criteria to Buy)
+
+---
+
+## OUTPUT REQUIREMENTS
+
+Produce a strict JSON object matching the schema below. Do not include commentary outside the JSON.
+
+---
+
+## JSON SCHEMA
+
+\`\`\`json
 {
-  "positioning_statement": "I help [WHO] achieve [WHAT] by [HOW]",
-  "unique_differentiation": "What makes them uniquely different from competitors",
-  "contrarian_position": {
-    "their_belief": "What they believe",
-    "mainstream_belief": "What most in their industry believe"
+  "client_name": "string",
+  "business_name": "string or null",
+  "positioning_statement": {
+    "who": "string",
+    "what": "string",
+    "how": "string",
+    "full_statement": "string"
   },
-  "gap_they_fill": {
-    "frustration": "What frustrates their clients before working with them",
-    "desired_outcome": "What their clients want instead"
+  "confluence": {
+    "megatrends": [
+      {"name": "string", "description": "string"}
+    ],
+    "named_phenomenon": "string or null",
+    "why_now_summary": "string"
   },
-  "unique_methodology": {
-    "name": "Name of their framework/method (or 'Unnamed Method' if not specified)",
-    "description": "How their method works",
-    "components": ["Step 1", "Step 2", "Step 3"]
+  "contrarian_approach": {
+    "conventional_frustration": "string",
+    "where_they_break_convention": "string",
+    "contrarian_beliefs": ["string"],
+    "mind_share_word": "string or null"
+  },
+  "all_roads_story": {
+    "mercenary_story": "string",
+    "missionary_story": "string",
+    "critical_combo": ["string"]
   },
   "transformation": {
-    "before": "Client's state before working with them",
-    "after": "Client's state after working with them"
+    "before": {
+      "frustrations": ["string"],
+      "failed_alternatives": ["string"]
+    },
+    "after": {
+      "outcomes": ["string"],
+      "what_becomes_possible": "string"
+    },
+    "client_example": "string or null"
   },
-  "competitive_landscape": "Why choose them over 100 other experts in their field"
+  "proof_points": {
+    "client_results": ["string"],
+    "testimonials": ["string"],
+    "credentials": ["string"],
+    "media_and_publications": ["string"],
+    "awards_and_recognition": ["string"],
+    "experience_metrics": "string or null"
+  },
+  "unique_methodology": {
+    "name": "string or null",
+    "steps_or_components": ["string"],
+    "what_makes_it_distinctive": "string or null"
+  },
+  "voice_and_language": {
+    "distinctive_phrases": ["string"],
+    "tone_notes": "string or null"
+  }
 }
+\`\`\`
 
-Rules:
-1. Extract ONLY information that was explicitly shared in the conversation
-2. If information for a field wasn't discussed, use a reasonable inference based on context, or write "Not discussed"
-3. Write in third person about the client (e.g., "Sarah helps..." not "I help...")
-4. Be specific and concrete - avoid vague language
-5. Capture their authentic voice and personality in the descriptions
+CONSTRAINTS:
+- Use null for missing fields; do not invent
+- Use their exact language where possible
+- Match their energy (bold client = bold profile; understated client = understated profile)
+- No "incredible," "amazing," "revolutionary"
+- Flag suggestions explicitly: "Based on the interview, a potential mind share concept could be [X], though not explicitly stated."
 
-Return ONLY the JSON object, no markdown formatting, no code blocks, no explanation - just the raw JSON.`;
+QUALITY CHECKLIST:
+Before output, verify:
+- JSON matches schema exactly
+- All information comes from transcript (nothing invented)
+- Missing info marked with null or "Not discussed"
+- Positioning statement is specific, not generic
+- Contrarian beliefs are genuinely contrarian
+- Critical combo is specific enough to be unreplicable
+- Tone matches client's energy
+- No hype language
+- Voice notes capture authentic speaking style
+
+OUTPUT FORMAT:
+Output exactly a complete JSON object. No preamble. No commentary. No markdown code blocks. Just the raw JSON.`;
 
 async function getLLMConfig(): Promise<LLMConfig | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -115,6 +242,79 @@ async function getLLMConfig(): Promise<LLMConfig | null> {
   return data as LLMConfig;
 }
 
+function validateProfile(profile: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!profile.client_name) errors.push("Missing client_name");
+  if (!profile.positioning_statement) errors.push("Missing positioning_statement");
+  if (!profile.confluence) errors.push("Missing confluence");
+  if (!profile.contrarian_approach) errors.push("Missing contrarian_approach");
+  if (!profile.all_roads_story) errors.push("Missing all_roads_story");
+  if (!profile.transformation) errors.push("Missing transformation");
+  if (!profile.proof_points) errors.push("Missing proof_points");
+  if (!profile.unique_methodology) errors.push("Missing unique_methodology");
+  if (!profile.voice_and_language) errors.push("Missing voice_and_language");
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+async function callClaudeForSynthesis(
+  systemPrompt: string,
+  userPrompt: string,
+  model: string,
+  anthropicApiKey: string
+): Promise<string> {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': anthropicApiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model,
+      max_tokens: 8192,
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Claude API error: ${error}`);
+  }
+
+  const data = await response.json();
+  const content = data.content?.[0]?.text;
+
+  if (!content) {
+    throw new Error('No response from Claude');
+  }
+
+  return content;
+}
+
+function extractJSON(content: string): string {
+  let jsonContent = content.trim();
+  
+  // Remove markdown code blocks if present
+  if (jsonContent.startsWith('```json')) {
+    jsonContent = jsonContent.slice(7);
+  } else if (jsonContent.startsWith('```')) {
+    jsonContent = jsonContent.slice(3);
+  }
+  if (jsonContent.endsWith('```')) {
+    jsonContent = jsonContent.slice(0, -3);
+  }
+  
+  return jsonContent.trim();
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -128,7 +328,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const config = await getLLMConfig();
-
     const { messages, clientName }: RequestBody = await req.json();
 
     // Build conversation transcript
@@ -137,67 +336,114 @@ Deno.serve(async (req: Request) => {
       .map(m => `${m.role === 'user' ? clientName : 'Interviewer'}: ${m.content}`)
       .join('\n\n');
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicApiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: config?.model || DEFAULT_MODEL,
-        max_tokens: 2048,
-        system: config?.synthesis_system_prompt || DEFAULT_SYNTHESIS_PROMPT,
-        messages: [
-          { 
-            role: 'user', 
-            content: `Client Name: ${clientName}\n\nConversation Transcript:\n\n${transcript}` 
-          },
-        ],
-      }),
-    });
+    const systemPrompt = config?.synthesis_system_prompt || DEFAULT_SYNTHESIS_PROMPT;
+    const userPrompt = `Client Name: ${clientName}\n\nConversation Transcript:\n\n${transcript}`;
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Claude API error: ${error}`);
+    // First attempt
+    let content = await callClaudeForSynthesis(
+      systemPrompt,
+      userPrompt,
+      config?.model || DEFAULT_MODEL,
+      anthropicApiKey
+    );
+
+    let jsonContent = extractJSON(content);
+    let profile: CategoryOfOneProfile;
+    let attempts = 1;
+    let synthesisError: string | null = null;
+
+    try {
+      profile = JSON.parse(jsonContent);
+      const validation = validateProfile(profile);
+      
+      if (!validation.valid) {
+        console.warn('First attempt validation failed:', validation.errors);
+        
+        // Retry with explicit schema reminder
+        attempts = 2;
+        const retryPrompt = `The previous response had validation errors: ${validation.errors.join(', ')}.
+
+Please provide the Category of One profile as a complete, valid JSON object matching this exact schema:
+
+${systemPrompt}
+
+Original request:
+${userPrompt}`;
+
+        content = await callClaudeForSynthesis(
+          "You are a senior business strategist. Output ONLY valid JSON matching the provided schema.",
+          retryPrompt,
+          config?.model || DEFAULT_MODEL,
+          anthropicApiKey
+        );
+
+        jsonContent = extractJSON(content);
+        profile = JSON.parse(jsonContent);
+        
+        const retryValidation = validateProfile(profile);
+        if (!retryValidation.valid) {
+          synthesisError = `Validation failed after retry: ${retryValidation.errors.join(', ')}`;
+          console.error(synthesisError);
+        }
+      }
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      synthesisError = `JSON parsing failed: ${parseError.message}`;
+      
+      // If first attempt, try retry
+      if (attempts === 1) {
+        attempts = 2;
+        try {
+          const retryPrompt = `The previous response was not valid JSON. Please provide ONLY a valid JSON object matching the schema. No markdown, no explanations, just JSON.
+
+Original request:
+${userPrompt}`;
+
+          content = await callClaudeForSynthesis(
+            systemPrompt,
+            retryPrompt,
+            config?.model || DEFAULT_MODEL,
+            anthropicApiKey
+          );
+
+          jsonContent = extractJSON(content);
+          profile = JSON.parse(jsonContent);
+          synthesisError = null; // Success on retry
+        } catch (retryError) {
+          synthesisError = `Retry also failed: ${retryError.message}`;
+          throw new Error(synthesisError);
+        }
+      } else {
+        throw new Error(synthesisError);
+      }
     }
-
-    const data = await response.json();
-    const content = data.content?.[0]?.text;
-
-    if (!content) {
-      throw new Error('No response from Claude');
-    }
-
-    // Parse the JSON response (Claude might wrap it in markdown code blocks)
-    let jsonContent = content.trim();
-    
-    // Remove markdown code blocks if present
-    if (jsonContent.startsWith('```json')) {
-      jsonContent = jsonContent.slice(7);
-    } else if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.slice(3);
-    }
-    if (jsonContent.endsWith('```')) {
-      jsonContent = jsonContent.slice(0, -3);
-    }
-    jsonContent = jsonContent.trim();
-
-    const profile: CategoryOfOneProfile = JSON.parse(jsonContent);
 
     // Generate markdown outputs
-    const rawProfile = generateMarkdownProfile(profile, clientName);
-    const businessProfile = generateBusinessProfile(profile, clientName);
-    const categoryOfOneDoc = rawProfile; // alias for clarity / future customization
-
-    profile.raw_profile = rawProfile;
+    const categoryOfOneMd = generateCategoryOfOneMarkdown(profile);
+    const businessProfileMd = generateBusinessProfileMarkdown(profile);
+    const rawProfile = categoryOfOneMd; // For legacy compatibility
 
     return new Response(
       JSON.stringify({
         profile: {
-          ...profile,
-          business_profile_md: businessProfile,
-          category_of_one_md: categoryOfOneDoc,
+          client_name: profile.client_name,
+          business_name: profile.business_name,
+          positioning_statement: profile.positioning_statement,
+          unique_differentiation: profile.unique_differentiation,
+          confluence: profile.confluence,
+          contrarian_approach: profile.contrarian_approach,
+          all_roads_story: profile.all_roads_story,
+          transformation: profile.transformation,
+          proof_points: profile.proof_points,
+          unique_methodology: profile.unique_methodology,
+          voice_and_language: profile.voice_and_language,
+          competitive_landscape: profile.competitive_landscape,
+          raw_profile: rawProfile,
+          business_profile_md: businessProfileMd,
+          category_of_one_md: categoryOfOneMd,
+          synthesis_attempts: attempts,
+          synthesis_error: synthesisError,
+          needs_review: synthesisError !== null,
         },
       }),
       {
@@ -207,7 +453,11 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        synthesis_attempts: 2,
+        needs_review: true,
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -216,51 +466,103 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-function generateMarkdownProfile(profile: CategoryOfOneProfile, clientName: string): string {
-  return `# Category of One: ${clientName}
+function generateCategoryOfOneMarkdown(profile: CategoryOfOneProfile): string {
+  const name = profile.client_name;
+  
+  return `# Category of One Profile: ${name}
 
 ## Positioning Statement
 
-${profile.positioning_statement}
+${profile.positioning_statement.full_statement}
 
-## Unique Differentiation
+---
 
-${profile.unique_differentiation}
+## The Confluence — Why Now
 
-## Contrarian Position
+${profile.confluence.why_now_summary}
 
-**What ${clientName} believes:**
-${profile.contrarian_position.their_belief}
+${profile.confluence.megatrends.map(t => `**${t.name}**: ${t.description}`).join('\n\n')}
 
-**What most in the industry believe:**
-${profile.contrarian_position.mainstream_belief}
+${profile.confluence.named_phenomenon ? `This convergence represents what can be called **${profile.confluence.named_phenomenon}**.` : ''}
 
-## The Gap They Fill
+---
 
-**Clients come to ${clientName} when they're frustrated with:**
-${profile.gap_they_fill.frustration}
+## The Contrarian Approach — Why This
 
-**They want:**
-${profile.gap_they_fill.desired_outcome}
+${profile.contrarian_approach.conventional_frustration}
 
-## Unique Methodology: ${profile.unique_methodology.name}
+${profile.contrarian_approach.where_they_break_convention}
 
-${profile.unique_methodology.description}
+**Contrarian beliefs:**
+${profile.contrarian_approach.contrarian_beliefs.map(b => `- ${b}`).join('\n')}
 
-**Key Components:**
-${profile.unique_methodology.components.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+${profile.contrarian_approach.mind_share_word ? `**Mind share word:** ${profile.contrarian_approach.mind_share_word}` : ''}
 
-## Transformation Delivered
+---
 
-**Before:** ${profile.transformation.before}
+## The All Roads Story — Why You
 
-**After:** ${profile.transformation.after}
+### The Mercenary Story
 
-## Competitive Landscape
+${profile.all_roads_story.mercenary_story}
 
-When someone searches for solutions in this space, why choose ${clientName}?
+### The Missionary Story
 
-${profile.competitive_landscape}
+${profile.all_roads_story.missionary_story}
+
+### The Critical Combo
+
+${profile.all_roads_story.critical_combo.map(c => `- ${c}`).join('\n')}
+
+---
+
+## The Transformation
+
+### Before
+
+**Frustrations:**
+${profile.transformation.before.frustrations.map(f => `- ${f}`).join('\n')}
+
+**Failed alternatives:**
+${profile.transformation.before.failed_alternatives.map(f => `- ${f}`).join('\n')}
+
+### After
+
+**Outcomes:**
+${profile.transformation.after.outcomes.map(o => `- ${o}`).join('\n')}
+
+**What becomes possible:**
+${profile.transformation.after.what_becomes_possible}
+
+${profile.transformation.client_example ? `\n### Client Example\n\n${profile.transformation.client_example}` : ''}
+
+---
+
+## Proof Points
+
+${profile.proof_points.client_results.length > 0 ? `**Client Results:**\n${profile.proof_points.client_results.map(r => `- ${r}`).join('\n')}\n` : ''}
+${profile.proof_points.testimonials.length > 0 ? `\n**Testimonials:**\n${profile.proof_points.testimonials.map(t => `- "${t}"`).join('\n')}\n` : ''}
+${profile.proof_points.credentials.length > 0 ? `\n**Credentials:**\n${profile.proof_points.credentials.map(c => `- ${c}`).join('\n')}\n` : ''}
+${profile.proof_points.media_and_publications.length > 0 ? `\n**Media & Publications:**\n${profile.proof_points.media_and_publications.map(m => `- ${m}`).join('\n')}\n` : ''}
+${profile.proof_points.awards_and_recognition.length > 0 ? `\n**Awards & Recognition:**\n${profile.proof_points.awards_and_recognition.map(a => `- ${a}`).join('\n')}\n` : ''}
+${profile.proof_points.experience_metrics ? `\n**Experience:** ${profile.proof_points.experience_metrics}` : ''}
+
+---
+
+## Unique Methodology
+
+${profile.unique_methodology.name ? `**${profile.unique_methodology.name}**\n\n` : ''}
+${profile.unique_methodology.steps_or_components.length > 0 ? profile.unique_methodology.steps_or_components.map((s, i) => `${i + 1}. ${s}`).join('\n') : 'No named methodology was discussed.'}
+
+${profile.unique_methodology.what_makes_it_distinctive ? `\n**What makes it distinctive:** ${profile.unique_methodology.what_makes_it_distinctive}` : ''}
+
+---
+
+## Voice and Language Notes
+
+${profile.voice_and_language.distinctive_phrases.length > 0 ? `**Distinctive phrases:**\n${profile.voice_and_language.distinctive_phrases.map(p => `- "${p}"`).join('\n')}\n` : 'No distinctive phrases captured.'}
+
+${profile.voice_and_language.tone_notes ? `\n**Tone:** ${profile.voice_and_language.tone_notes}` : ''}
 
 ---
 
@@ -268,31 +570,52 @@ ${profile.competitive_landscape}
 `;
 }
 
-function generateBusinessProfile(profile: CategoryOfOneProfile, clientName: string): string {
-  return `# Business Profile: ${clientName}
+function generateBusinessProfileMarkdown(profile: CategoryOfOneProfile): string {
+  const name = profile.client_name;
+  
+  return `# Business Profile: ${name}
 
 ## Positioning Statement
 
-${profile.positioning_statement}
+${profile.positioning_statement.full_statement}
+
+---
 
 ## Unique Differentiation
 
-${profile.unique_differentiation}
+${profile.unique_differentiation || 'Not discussed in interview.'}
+
+---
 
 ## The Gap They Fill
 
-Clients typically come to ${clientName} when they are frustrated with:
-${profile.gap_they_fill.frustration}
+**Clients come to ${name} when they're frustrated with:**
+${profile.transformation.before.frustrations.map(f => `- ${f}`).join('\n')}
 
-They want:
-${profile.gap_they_fill.desired_outcome}
+**They want:**
+${profile.transformation.after.outcomes.map(o => `- ${o}`).join('\n')}
+
+---
 
 ## Transformation
 
-Before working with ${clientName}:
-${profile.transformation.before}
+**Before working with ${name}:**
+${profile.transformation.before.frustrations.map(f => `- ${f}`).join('\n')}
 
-After working with ${clientName}:
-${profile.transformation.after}
+**After working with ${name}:**
+${profile.transformation.after.outcomes.map(o => `- ${o}`).join('\n')}
+
+${profile.transformation.after.what_becomes_possible}
+
+---
+
+## Proof Points
+
+${profile.proof_points.client_results.length > 0 ? profile.proof_points.client_results.map(r => `- ${r}`).join('\n') : ''}
+${profile.proof_points.testimonials.length > 0 ? `\n${profile.proof_points.testimonials.map(t => `> "${t}"`).join('\n\n')}` : ''}
+
+---
+
+*Generated by Category of One*
 `;
 }

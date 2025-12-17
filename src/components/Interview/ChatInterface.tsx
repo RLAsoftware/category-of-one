@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, AlertTriangle, Sparkles } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
-import type { LocalChatMessage } from '../../lib/types';
+import type { LocalChatMessage, UserRole } from '../../lib/types';
 
 interface ChatInterfaceProps {
   messages: LocalChatMessage[];
@@ -9,7 +9,13 @@ interface ChatInterfaceProps {
   isSynthesizing: boolean;
   onSendMessage: (content: string) => void;
   onStartFromScratch?: () => void;
+  onForceSynthesis?: () => void;
   error?: string | null;
+  messageCount?: number;
+  isNearTurnLimit?: boolean;
+  isAtTurnLimit?: boolean;
+  userRole?: UserRole | null;
+  sessionStatus?: string;
 }
 
 export function ChatInterface({
@@ -18,11 +24,21 @@ export function ChatInterface({
   isSynthesizing,
   onSendMessage,
   onStartFromScratch,
+  onForceSynthesis,
   error,
+  messageCount = 0,
+  isNearTurnLimit = false,
+  isAtTurnLimit = false,
+  userRole = null,
+  sessionStatus = 'chatting',
 }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
+  const [showForceSynthesisConfirm, setShowForceSynthesisConfirm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const isAdmin = userRole === 'admin';
+  const canForceSynthesis = isAdmin && sessionStatus === 'chatting' && messages.length >= 5;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -89,6 +105,39 @@ export function ChatInterface({
             message={message}
           />
         ))}
+
+        {/* Turn limit warnings */}
+        {isAtTurnLimit && !isSynthesizing && (
+          <div className="flex items-center justify-center py-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-6 py-4 shadow-sm max-w-2xl">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-amber-900">Turn limit reached ({messageCount} messages)</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    This conversation has reached the maximum recommended length. Consider generating the profile or starting a new session.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isNearTurnLimit && !isAtTurnLimit && !isSynthesizing && (
+          <div className="flex items-center justify-center py-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-6 py-4 shadow-sm max-w-2xl">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-yellow-900">Approaching turn limit ({messageCount}/100 messages)</p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Consider wrapping up soon to generate the profile.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Synthesizing indicator */}
         {isSynthesizing && (
@@ -172,6 +221,39 @@ export function ChatInterface({
 
               <div className="flex items-center justify-center gap-2 text-[11px] text-slate mt-2">
                 <span>Press Enter to send, Shift+Enter for new line</span>
+                {canForceSynthesis && onForceSynthesis && (
+                  <>
+                    <span>•</span>
+                    {showForceSynthesisConfirm ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            onForceSynthesis();
+                            setShowForceSynthesisConfirm(false);
+                          }}
+                          className="text-sunset hover:text-sunset-dark underline transition-colors font-medium"
+                        >
+                          Confirm generate profile
+                        </button>
+                        <button
+                          onClick={() => setShowForceSynthesisConfirm(false)}
+                          className="text-slate hover:text-ink underline transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowForceSynthesisConfirm(true)}
+                        className="text-sunset hover:text-sunset-dark underline transition-colors inline-flex items-center gap-1"
+                        title="Admin: Force generate profile now"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Force synthesis
+                      </button>
+                    )}
+                  </>
+                )}
                 {onStartFromScratch && messages.length > 0 && (
                   <>
                     <span>•</span>

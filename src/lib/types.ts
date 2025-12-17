@@ -67,6 +67,8 @@ export interface InterviewSession {
   archived?: boolean;
   deleted_at?: string | null;
   last_message_at?: string | null;
+  message_count: number;
+  flagged_for_review: boolean;
   created_at: string;
   completed_at: string | null;
 }
@@ -149,53 +151,125 @@ export interface LocalChatMessage {
 // Category of One Profile Types
 // ============================================
 
-export interface ContrarianPosition {
-  their_belief: string;
-  mainstream_belief: string;
+export interface PositioningStatement {
+  who: string;
+  what: string;
+  how: string;
+  full_statement: string;
 }
 
-export interface GapTheyFill {
-  frustration: string;
-  desired_outcome: string;
+export interface Megatrend {
+  name: string;
+  description: string;
+}
+
+export interface Confluence {
+  megatrends: Megatrend[];
+  named_phenomenon: string | null;
+  why_now_summary: string;
+}
+
+export interface ContrarianApproach {
+  conventional_frustration: string;
+  where_they_break_convention: string;
+  contrarian_beliefs: string[];
+  mind_share_word: string | null;
+}
+
+export interface AllRoadsStory {
+  mercenary_story: string;
+  missionary_story: string;
+  critical_combo: string[];
+}
+
+export interface DetailedTransformation {
+  before: {
+    frustrations: string[];
+    failed_alternatives: string[];
+  };
+  after: {
+    outcomes: string[];
+    what_becomes_possible: string;
+  };
+  client_example: string | null;
+}
+
+export interface ProofPoints {
+  client_results: string[];
+  testimonials: string[];
+  credentials: string[];
+  media_and_publications: string[];
+  awards_and_recognition: string[];
+  experience_metrics: string | null;
 }
 
 export interface UniqueMethodology {
-  name: string;
-  description: string;
-  components: string[];
+  name: string | null;
+  steps_or_components: string[];
+  what_makes_it_distinctive: string | null;
 }
 
-export interface Transformation {
-  before: string;
-  after: string;
+export interface VoiceAndLanguage {
+  distinctive_phrases: string[];
+  tone_notes: string | null;
 }
 
 export interface CategoryOfOneProfile {
   id: string;
   client_id: string;
   session_id: string;
-  positioning_statement: string | null;
+  client_name: string | null;
+  business_name: string | null;
+  positioning_statement: PositioningStatement | null;
   unique_differentiation: string | null;
-  contrarian_position: ContrarianPosition | null;
-  gap_they_fill: GapTheyFill | null;
+  confluence: Confluence | null;
+  contrarian_approach: ContrarianApproach | null;
+  all_roads_story: AllRoadsStory | null;
+  transformation: DetailedTransformation | null;
+  proof_points: ProofPoints | null;
   unique_methodology: UniqueMethodology | null;
-  transformation: Transformation | null;
+  voice_and_language: VoiceAndLanguage | null;
   competitive_landscape: string | null;
-  raw_profile: string;
-  business_profile_md?: string | null;
-  category_of_one_md?: string | null;
+  raw_profile: string | null;
+  business_profile_md: string | null;
+  category_of_one_md: string | null;
+  synthesis_attempts: number;
+  synthesis_error: string | null;
+  needs_review: boolean;
   created_at: string;
   updated_at: string;
 }
 
+// Legacy types for backward compatibility (deprecated)
+/** @deprecated Use PositioningStatement instead */
+export interface ContrarianPosition {
+  their_belief: string;
+  mainstream_belief: string;
+}
+
+/** @deprecated Use DetailedTransformation instead */
+export interface Transformation {
+  before: string;
+  after: string;
+}
+
+/** @deprecated No longer used in new schema */
+export interface GapTheyFill {
+  frustration: string;
+  desired_outcome: string;
+}
+
 // Structured profile for display and export
 export interface CategoryOfOneProfileData {
-  positioningStatement: string;
+  positioningStatement: PositioningStatement;
   uniqueDifferentiation: string;
-  contrarianPosition: ContrarianPosition;
-  gapTheyFill: GapTheyFill;
+  confluence: Confluence;
+  contrarianApproach: ContrarianApproach;
+  allRoadsStory: AllRoadsStory;
+  transformation: DetailedTransformation;
+  proofPoints: ProofPoints;
   uniqueMethodology: UniqueMethodology;
-  transformation: Transformation;
+  voiceAndLanguage: VoiceAndLanguage;
   competitiveLandscape: string;
 }
 

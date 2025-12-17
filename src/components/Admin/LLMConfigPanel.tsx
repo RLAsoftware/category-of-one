@@ -191,10 +191,13 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
                   setChatPrompt(e.target.value);
                   setSaved(false);
                 }}
-                rows={8}
+                rows={18}
                 className="font-mono text-xs bg-white"
                 disabled={!isAdmin}
               />
+              <p className="text-xs text-slate mt-1">
+                {chatPrompt.length.toLocaleString()} chars (~{Math.ceil(chatPrompt.length / 4).toLocaleString()} tokens)
+              </p>
             </div>
 
             <div>
@@ -207,10 +210,13 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
                   setSynthesisPrompt(e.target.value);
                   setSaved(false);
                 }}
-                rows={8}
+                rows={18}
                 className="font-mono text-xs bg-white"
                 disabled={!isAdmin}
               />
+              <p className="text-xs text-slate mt-1">
+                {synthesisPrompt.length.toLocaleString()} chars (~{Math.ceil(synthesisPrompt.length / 4).toLocaleString()} tokens)
+              </p>
             </div>
           </div>
 

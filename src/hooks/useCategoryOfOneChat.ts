@@ -20,6 +20,9 @@ interface UseCategoryOfOneChatReturn {
   error: string | null;
   session: InterviewSession | null;
   profile: CategoryOfOneProfile | null;
+  messageCount: number;
+  isNearTurnLimit: boolean;
+  isAtTurnLimit: boolean;
   initializeChat: () => Promise<void>;
   loadSession: (sessionId: string) => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
@@ -399,6 +402,23 @@ export function useCategoryOfOneChat({
         content: fullContent,
       });
 
+      // Update message count
+      const newMessageCount = (session.message_count || 0) + 2; // user + assistant
+      await supabase
+        .from('interview_sessions')
+        .update({ 
+          message_count: newMessageCount,
+          flagged_for_review: newMessageCount >= 100 
+        })
+        .eq('id', session.id);
+
+      // Update local session state
+      setSession(prev => prev ? { 
+        ...prev, 
+        message_count: newMessageCount,
+        flagged_for_review: newMessageCount >= 100
+      } : null);
+
       // Check if synthesis is ready
       if (fullContent.includes('[SYNTHESIS_READY]')) {
         // Auto-trigger synthesis
@@ -407,6 +427,9 @@ export function useCategoryOfOneChat({
           role: 'assistant',
           content: fullContent,
         }]);
+      } else if (newMessageCount >= 100) {
+        // Auto-flag for review if 100 turns reached without synthesis
+        console.warn(`Session ${session.id} reached 100 turns without synthesis`);
       }
 
     } catch (err) {
@@ -587,6 +610,10 @@ export function useCategoryOfOneChat({
     URL.revokeObjectURL(url);
   }, [profile, clientName]);
 
+  const messageCount = session?.message_count || 0;
+  const isNearTurnLimit = messageCount >= 80;
+  const isAtTurnLimit = messageCount >= 100;
+
   return {
     messages,
     isLoading,
@@ -595,6 +622,9 @@ export function useCategoryOfOneChat({
     error,
     session,
     profile,
+    messageCount,
+    isNearTurnLimit,
+    isAtTurnLimit,
     initializeChat,
     loadSession,
     sendMessage,

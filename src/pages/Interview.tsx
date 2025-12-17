@@ -7,12 +7,12 @@ import { ChatInterface } from '../components/Interview/ChatInterface';
 import { ProfileResult } from '../components/Interview/ProfileResult';
 import { Button } from '../components/ui';
 import { LogOut, Loader2, MessageSquare, ArrowLeft, RefreshCw } from 'lucide-react';
-import type { Client } from '../lib/types';
+import type { Client, UserRole } from '../lib/types';
 
 export function Interview() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId?: string }>();
-  const { user, loading: authLoading, signOut, sessionTimedOut } = useAuth();
+  const { user, loading: authLoading, signOut, sessionTimedOut, userRole } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
   const [showStartFromScratchModal, setShowStartFromScratchModal] = useState(false);
@@ -50,9 +50,13 @@ export function Interview() {
     error,
     session,
     profile,
+    messageCount,
+    isNearTurnLimit,
+    isAtTurnLimit,
     initializeChat,
     loadSession,
     sendMessage,
+    synthesizeProfile,
     resetChat,
     exportProfileAsMarkdown,
     exportBusinessProfile,
@@ -198,7 +202,13 @@ export function Interview() {
               isSynthesizing={isSynthesizing}
               onSendMessage={sendMessage}
               onStartFromScratch={!isCompleted ? handleStartFromScratch : undefined}
+              onForceSynthesis={synthesizeProfile}
               error={error}
+              messageCount={messageCount}
+              isNearTurnLimit={isNearTurnLimit}
+              isAtTurnLimit={isAtTurnLimit}
+              userRole={userRole}
+              sessionStatus={session?.status}
             />
           </>
         )}
