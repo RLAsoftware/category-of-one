@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Login } from './pages/Login';
+import { Dashboard } from './pages/Dashboard';
 import { Interview } from './pages/Interview';
 import { Admin } from './pages/Admin';
 import { AuthCallback } from './components/Auth/AuthCallback';
@@ -38,7 +39,9 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/interview" element={<Interview />} />
+        <Route path="/interview/:sessionId" element={<Interview />} />
         <Route path="/admin" element={<Admin />} />
       </Routes>
     </>

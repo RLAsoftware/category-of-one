@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCategoryOfOneChat } from '../hooks/useCategoryOfOneChat';
 import { getClientByUserId } from '../lib/supabase';
 import { ChatInterface } from '../components/Interview/ChatInterface';
 import { ProfileResult } from '../components/Interview/ProfileResult';
 import { Button } from '../components/ui';
-import { LogOut, Loader2, MessageSquare } from 'lucide-react';
+import { LogOut, Loader2, MessageSquare, ArrowLeft, RefreshCw } from 'lucide-react';
 import type { Client } from '../lib/types';
 
 export function Interview() {
   const navigate = useNavigate();
+  const { sessionId } = useParams<{ sessionId?: string }>();
   const { user, loading: authLoading, signOut, sessionTimedOut } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
+  const [showStartFromScratchModal, setShowStartFromScratchModal] = useState(false);
 
   useEffect(() => {
     // If session timed out, redirect to login
@@ -49,6 +51,7 @@ export function Interview() {
     session,
     profile,
     initializeChat,
+    loadSession,
     sendMessage,
     resetChat,
     exportProfileAsMarkdown,
@@ -57,18 +60,43 @@ export function Interview() {
   } = useCategoryOfOneChat({
     clientId: client?.id || '',
     clientName: client?.name || '',
+    sessionId: sessionId,
   });
 
-  // Initialize chat when client is loaded
+  // Initialize or load chat when client is loaded
   useEffect(() => {
     if (client && !session) {
-      initializeChat();
+      if (sessionId) {
+        // Load existing session
+        loadSession(sessionId);
+      } else {
+        // Create new session
+        initializeChat();
+      }
     }
-  }, [client, session, initializeChat]);
+  }, [client, session, sessionId, initializeChat, loadSession]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login', { replace: true });
+  };
+
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
+  const handleStartFromScratch = () => {
+    setShowStartFromScratchModal(true);
+  };
+
+  const handleConfirmStartFromScratch = async () => {
+    await resetChat();
+    setShowStartFromScratchModal(false);
+    navigate('/dashboard');
+  };
+
+  const handleCancelStartFromScratch = () => {
+    setShowStartFromScratchModal(false);
   };
 
   if (authLoading || clientLoading) {
@@ -102,6 +130,9 @@ export function Interview() {
       <header className="py-4 px-6 border-b border-ink/5 bg-white/80 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={handleBackToDashboard}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sunset to-amber-500 flex items-center justify-center shadow-md">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
@@ -113,6 +144,12 @@ export function Interview() {
           </div>
 
           <div className="flex items-center gap-3">
+            {!isCompleted && messages.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={handleStartFromScratch}>
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Start from Scratch</span>
+              </Button>
+            )}
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-xs text-slate/70">Welcome back</span>
               <span className="text-sm font-medium text-ink">{client.name}</span>
@@ -172,6 +209,41 @@ export function Interview() {
         )}
         </div>
       </main>
+
+      {/* Start from Scratch Confirmation Modal */}
+      {showStartFromScratchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-ink/50 backdrop-blur-sm"
+            onClick={handleCancelStartFromScratch}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <RefreshCw className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-ink mb-1">Start from Scratch?</h2>
+                <p className="text-sm text-slate">
+                  This will archive your current conversation and start a new interview session. Your current session will still be available in your dashboard.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button onClick={handleCancelStartFromScratch} variant="ghost">
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmStartFromScratch} variant="primary">
+                Start New Interview
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

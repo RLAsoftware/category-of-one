@@ -144,3 +144,318 @@ export async function isEmailInvited(email: string): Promise<boolean> {
   return false;
 }
 
+// ============================================
+// Session Management Functions
+// ============================================
+
+/**
+ * Get all sessions for a client (non-deleted by default)
+ */
+export async function getClientSessions(clientId: string, includeDeleted: boolean = false) {
+  let query = supabase
+    .from('interview_sessions')
+    .select('*')
+    .eq('client_id', clientId)
+    .eq('archived', false)
+    .order('last_message_at', { ascending: false, nullsFirst: false });
+
+  if (!includeDeleted) {
+    query = query.is('deleted_at', null);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('getClientSessions error:', error.message);
+    return [];
+  }
+
+  return data;
+}
+
+/**
+ * Get soft-deleted sessions for Recently Deleted section
+ */
+export async function getDeletedSessions(clientId: string) {
+  const { data, error } = await supabase
+    .from('interview_sessions')
+    .select('*')
+    .eq('client_id', clientId)
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false });
+
+  if (error) {
+    console.error('getDeletedSessions error:', error.message);
+    return [];
+  }
+
+  return data;
+}
+
+/**
+ * Search sessions by title or content
+ */
+export async function searchSessions(clientId: string, query: string) {
+  if (!query.trim()) {
+    return getClientSessions(clientId);
+  }
+
+  // Search in session titles
+  const { data: sessions, error } = await supabase
+    .from('interview_sessions')
+    .select('*')
+    .eq('client_id', clientId)
+    .eq('archived', false)
+    .is('deleted_at', null)
+    .ilike('title', `%${query}%`)
+    .order('last_message_at', { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error('searchSessions error:', error.message);
+    return [];
+  }
+
+  return sessions;
+}
+
+/**
+ * Filter sessions by completion status
+ */
+export async function filterSessionsByStatus(clientId: string, statusFilter: 'all' | 'in_progress' | 'completed') {
+  let query = supabase
+    .from('interview_sessions')
+    .select('*')
+    .eq('client_id', clientId)
+    .eq('archived', false)
+    .is('deleted_at', null)
+    .order('last_message_at', { ascending: false, nullsFirst: false });
+
+  if (statusFilter === 'completed') {
+    query = query.eq('status', 'completed');
+  } else if (statusFilter === 'in_progress') {
+    query = query.neq('status', 'completed');
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('filterSessionsByStatus error:', error.message);
+    return [];
+  }
+
+  return data;
+}
+
+/**
+ * Get a specific session by ID with all messages
+ */
+export async function getSessionById(sessionId: string) {
+  const { data: session, error: sessionError } = await supabase
+    .from('interview_sessions')
+    .select('*')
+    .eq('id', sessionId)
+    .single();
+
+  if (sessionError) {
+    console.error('getSessionById error:', sessionError.message);
+    return null;
+  }
+
+  // Fetch messages for this session
+  const { data: messages, error: messagesError } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: true });
+
+  if (messagesError) {
+    console.error('getMessages error:', messagesError.message);
+  }
+
+  return {
+    ...session,
+    messages: messages || []
+  };
+}
+
+/**
+ * Get profile for a specific session
+ */
+export async function getProfileBySessionId(sessionId: string) {
+  const { data, error } = await supabase
+    .from('category_of_one_profiles')
+    .select('*')
+    .eq('session_id', sessionId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No profile found
+      return null;
+    }
+    console.error('getProfileBySessionId error:', error.message);
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * Update session title (for inline editing)
+ */
+export async function updateSessionTitle(sessionId: string, title: string) {
+  const { data, error } = await supabase
+    .from('interview_sessions')
+    .update({ title: title.trim() })
+    .eq('id', sessionId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('updateSessionTitle error:', error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Soft delete a session (sets deleted_at timestamp)
+ */
+export async function softDeleteSession(sessionId: string) {
+  const { data, error } = await supabase
+    .from('interview_sessions')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', sessionId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('softDeleteSession error:', error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Restore a soft-deleted session
+ */
+export async function restoreSession(sessionId: string) {
+  const { data, error } = await supabase
+    .from('interview_sessions')
+    .update({ deleted_at: null })
+    .eq('id', sessionId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('restoreSession error:', error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Permanently delete a session (hard delete)
+ */
+export async function permanentlyDeleteSession(sessionId: string) {
+  const { error } = await supabase
+    .from('interview_sessions')
+    .delete()
+    .eq('id', sessionId);
+
+  if (error) {
+    console.error('permanentlyDeleteSession error:', error.message);
+    throw error;
+  }
+
+  return true;
+}
+
+/**
+ * Create a new session with auto-generated title
+ */
+export async function createSession(clientId: string) {
+  const now = new Date();
+  const title = `Interview - ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+  const { data, error } = await supabase
+    .from('interview_sessions')
+    .insert({
+      client_id: clientId,
+      status: 'chatting',
+      title,
+      last_message_at: now.toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('createSession error:', error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Update session activity timestamp
+ */
+export async function updateSessionActivity(sessionId: string) {
+  const { error } = await supabase
+    .from('interview_sessions')
+    .update({ last_message_at: new Date().toISOString() })
+    .eq('id', sessionId);
+
+  if (error) {
+    console.error('updateSessionActivity error:', error.message);
+  }
+
+  return !error;
+}
+
+/**
+ * Get the latest completed profile for a client
+ */
+export async function getLatestProfileForClient(clientId: string) {
+  const { data, error } = await supabase
+    .from('category_of_one_profiles')
+    .select('*, interview_sessions!inner(*)')
+    .eq('client_id', clientId)
+    .eq('interview_sessions.status', 'completed')
+    .is('interview_sessions.deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No profile found
+      return null;
+    }
+    console.error('getLatestProfileForClient error:', error.message);
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * Get count of messages in a session
+ */
+export async function getSessionMessageCount(sessionId: string) {
+  const { count, error } = await supabase
+    .from('chat_messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('session_id', sessionId);
+
+  if (error) {
+    console.error('getSessionMessageCount error:', error.message);
+    return 0;
+  }
+
+  return count || 0;
+}
+

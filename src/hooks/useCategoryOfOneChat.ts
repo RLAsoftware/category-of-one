@@ -9,6 +9,7 @@ import type {
 interface UseCategoryOfOneChatOptions {
   clientId: string;
   clientName: string;
+  sessionId?: string;
 }
 
 interface UseCategoryOfOneChatReturn {
@@ -20,17 +21,19 @@ interface UseCategoryOfOneChatReturn {
   session: InterviewSession | null;
   profile: CategoryOfOneProfile | null;
   initializeChat: () => Promise<void>;
+  loadSession: (sessionId: string) => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
   synthesizeProfile: () => Promise<void>;
   resetChat: () => Promise<void>;
   exportProfileAsMarkdown: () => void;
-   exportBusinessProfile: () => void;
-   exportCategoryOfOneDoc: () => void;
+  exportBusinessProfile: () => void;
+  exportCategoryOfOneDoc: () => void;
 }
 
 export function useCategoryOfOneChat({ 
   clientId, 
-  clientName 
+  clientName,
+  sessionId: initialSessionId
 }: UseCategoryOfOneChatOptions): UseCategoryOfOneChatReturn {
   const [messages, setMessages] = useState<LocalChatMessage[]>([]);
   const [session, setSession] = useState<InterviewSession | null>(null);
@@ -142,6 +145,60 @@ export function useCategoryOfOneChat({
       setIsLoading(false);
     }
   }, [clientId]);
+
+  // Load an existing session by ID
+  const loadSession = useCallback(async (sessionId: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Fetch the session
+      const { data: existingSession, error: sessionError } = await supabase
+        .from('interview_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+      if (!existingSession) throw new Error('Session not found');
+
+      setSession(existingSession);
+
+      // Load messages
+      const { data: chatMessages, error: messagesError } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (messagesError) throw messagesError;
+
+      if (chatMessages) {
+        setMessages(chatMessages.map(m => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+        })));
+      }
+
+      // Load profile if completed
+      if (existingSession.status === 'completed') {
+        const { data: existingProfile } = await supabase
+          .from('category_of_one_profiles')
+          .select('*')
+          .eq('session_id', sessionId)
+          .single();
+
+        if (existingProfile) {
+          setProfile(existingProfile);
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load session');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Start a new conversation with AI greeting
   const startNewConversation = async (sessionId: string) => {
@@ -540,6 +597,7 @@ export function useCategoryOfOneChat({
     session,
     profile,
     initializeChat,
+    loadSession,
     sendMessage,
     synthesizeProfile,
     resetChat,

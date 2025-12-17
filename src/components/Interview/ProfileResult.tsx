@@ -1,4 +1,5 @@
-import { Download, RefreshCw, Target, Sparkles, Zap, Users, Lightbulb, TrendingUp, Trophy } from 'lucide-react';
+import { Download, RefreshCw, Target, Sparkles, Zap, Users, Lightbulb, TrendingUp, Trophy, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../ui';
 import type { CategoryOfOneProfile } from '../../lib/types';
 
@@ -19,12 +20,14 @@ export function ProfileResult({
   onExportBusiness,
   onExportCategory,
 }: ProfileResultProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="text-center mb-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-sunset to-amber-500 mb-6">
-          <Trophy className="w-8 h-8 text-white" />
+      <div className="text-center mb-12 animate-fade-in">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-sunset to-amber-500 mb-6 shadow-lg animate-bounce-in">
+          <Trophy className="w-10 h-10 text-white" />
         </div>
         <h1 className="text-4xl font-display mb-4">Your Category of One</h1>
         <p className="text-lg text-slate max-w-xl mx-auto">
@@ -33,9 +36,9 @@ export function ProfileResult({
       </div>
 
       {/* Profile Cards */}
-      <div className="space-y-6">
+      <div className="space-y-6 animate-stagger-in">
         {/* Positioning Statement - Featured */}
-        <Card variant="elevated" className="bg-gradient-to-br from-sunset/5 to-amber-50 border-sunset/20">
+        <Card variant="elevated" className="bg-gradient-to-br from-sunset/5 to-amber-50 border-sunset/20 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-sunset/20 flex items-center justify-center flex-shrink-0">
               <Target className="w-6 h-6 text-sunset" />
@@ -52,7 +55,7 @@ export function ProfileResult({
         {/* Two Column Grid */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Unique Differentiation */}
-          <Card variant="elevated">
+          <Card variant="elevated" className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <div className="flex items-start gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                 <Sparkles className="w-5 h-5 text-purple-600" />
@@ -65,7 +68,7 @@ export function ProfileResult({
           </Card>
 
           {/* Competitive Landscape */}
-          <Card variant="elevated">
+          <Card variant="elevated" className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
             <div className="flex items-start gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                 <Trophy className="w-5 h-5 text-blue-600" />
@@ -80,7 +83,7 @@ export function ProfileResult({
 
         {/* Contrarian Position */}
         {profile.contrarian_position && (
-          <Card variant="elevated">
+          <Card variant="elevated" className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
                 <Lightbulb className="w-5 h-5 text-red-600" />
@@ -106,7 +109,7 @@ export function ProfileResult({
 
         {/* The Gap They Fill */}
         {profile.gap_they_fill && (
-          <Card variant="elevated">
+          <Card variant="elevated" className="animate-slide-up" style={{ animationDelay: '0.5s' }}>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <Zap className="w-5 h-5 text-amber-600" />
@@ -132,7 +135,7 @@ export function ProfileResult({
 
         {/* Unique Methodology */}
         {profile.unique_methodology && (
-          <Card variant="elevated">
+          <Card variant="elevated" className="animate-slide-up" style={{ animationDelay: '0.6s' }}>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
                 <Users className="w-5 h-5 text-indigo-600" />
@@ -167,7 +170,7 @@ export function ProfileResult({
 
         {/* Transformation */}
         {profile.transformation && (
-          <Card variant="elevated">
+          <Card variant="elevated" className="animate-slide-up" style={{ animationDelay: '0.7s' }}>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="w-5 h-5 text-emerald-600" />
@@ -196,7 +199,11 @@ export function ProfileResult({
       </div>
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center mt-12">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center mt-12 animate-fade-in" style={{ animationDelay: '0.8s' }}>
+        <Button onClick={() => navigate('/dashboard')} variant="ghost" className="gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Button>
         <Button onClick={onExportFull} variant="primary" className="gap-2">
           <Download className="w-4 h-4" />
           Export full profile
