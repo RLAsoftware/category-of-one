@@ -67,14 +67,18 @@ export function Login() {
           </div>
 
           {loading && hasShownLoading && !error && (
-            <p className="text-center text-xs text-slate mb-3">
-              Checking your session…
-            </p>
+            <div className="bg-slate/10 border border-slate/20 rounded-lg px-4 py-3 mb-4">
+              <p className="text-center text-sm text-slate">
+                Checking your session…
+              </p>
+            </div>
           )}
           {error && (
-            <p className="text-center text-xs text-error mb-3">
-              {error}
-            </p>
+            <div className="bg-error/10 border border-error/20 rounded-lg px-4 py-3 mb-4">
+              <p className="text-center text-sm text-error">
+                {error}
+              </p>
+            </div>
           )}
           
           <LoginForm
