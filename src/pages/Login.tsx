@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/Auth/LoginForm';
 import { useAuth } from '../hooks/useAuth';
 
 export function Login() {
   const navigate = useNavigate();
+  const [hasShownLoading, setHasShownLoading] = useState(false);
   const {
     user,
     role,
@@ -14,6 +15,16 @@ export function Login() {
     signInWithPassword,
     sendPasswordReset,
   } = useAuth();
+
+  // Track when loading has been shown for at least a brief moment
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setHasShownLoading(true), 300);
+      return () => clearTimeout(timer);
+    } else {
+      setHasShownLoading(false);
+    }
+  }, [loading]);
 
   useEffect(() => {
     // Wait for loading to complete before deciding redirects
@@ -55,7 +66,7 @@ export function Login() {
             <h1 className="font-primary text-4xl mb-4">Category Of One</h1>
           </div>
 
-          {loading && !error && (
+          {loading && hasShownLoading && !error && (
             <p className="text-center text-xs text-slate mb-3">
               Checking your session…
             </p>
