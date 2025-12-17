@@ -63,6 +63,10 @@ export interface InterviewSession {
   follow_up_questions: string[] | null;
   follow_up_answers: Record<string, string> | null;
   style_profile: string | null;
+  title?: string | null;
+  archived?: boolean;
+  deleted_at?: string | null;
+  last_message_at?: string | null;
   created_at: string;
   completed_at: string | null;
 }

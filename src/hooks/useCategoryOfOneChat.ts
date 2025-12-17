@@ -32,8 +32,7 @@ interface UseCategoryOfOneChatReturn {
 
 export function useCategoryOfOneChat({ 
   clientId, 
-  clientName,
-  sessionId: initialSessionId
+  clientName
 }: UseCategoryOfOneChatOptions): UseCategoryOfOneChatReturn {
   const [messages, setMessages] = useState<LocalChatMessage[]>([]);
   const [session, setSession] = useState<InterviewSession | null>(null);

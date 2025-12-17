@@ -10,7 +10,7 @@ import { ProfileCard } from '../components/Dashboard/ProfileCard';
 import { DeleteSessionModal } from '../components/Dashboard/DeleteSessionModal';
 import { EmptyState } from '../components/Dashboard/EmptyState';
 import { ToastContainer } from '../components/ui/Toast';
-import { LogOut, Loader2, MessageSquare, Plus, Search, Filter } from 'lucide-react';
+import { LogOut, Loader2, MessageSquare, Plus, Search } from 'lucide-react';
 import type { Client } from '../lib/types';
 
 export function Dashboard() {
