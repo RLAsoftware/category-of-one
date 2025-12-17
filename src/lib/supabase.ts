@@ -84,16 +84,26 @@ export async function updateLLMConfig(
   name: string,
   payload: Pick<LLMConfig, 'model' | 'chat_system_prompt' | 'synthesis_system_prompt'>
 ): Promise<LLMConfig | null> {
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  console.log('[updateLLMConfig] Starting update for:', name);
+  console.log('[updateLLMConfig] User ID:', user?.id);
+  
   const { data, error } = await supabase
     .from('llm_configs')
     .update({
       model: payload.model,
       chat_system_prompt: payload.chat_system_prompt,
       synthesis_system_prompt: payload.synthesis_system_prompt,
+      updated_by: user?.id,
+      updated_at: new Date().toISOString(),
     })
     .eq('name', name)
     .select('*')
     .single();
+
+  console.log('[updateLLMConfig] Response:', { data, error });
 
   if (error) {
     console.error('updateLLMConfig error:', error.message);
