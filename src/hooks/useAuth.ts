@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase, getUserRole } from '../lib/supabase';
+import { supabase, getUserRole, isEmailInvited } from '../lib/supabase';
 import type { UserRole } from '../lib/types';
 
 interface AuthState {
@@ -125,6 +125,15 @@ export function useAuth() {
 
   const signInWithMagicLink = useCallback(async (email: string) => {
     setState(prev => ({ ...prev, error: null }));
+    
+    // Pre-validate email before sending magic link
+    const isInvited = await isEmailInvited(email);
+    if (!isInvited) {
+      const error = { message: 'No user account found. Please contact an administrator to request access.' };
+      setState(prev => ({ ...prev, error: error.message }));
+      return { error };
+    }
+    
     // Use environment variable for production URL, fallback to window.location.origin
     const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
     
@@ -148,6 +157,15 @@ export function useAuth() {
     setState(prev => ({ ...prev, error: null, loading: true }));
 
     try {
+      // Pre-validate email before attempting login
+      const isInvited = await isEmailInvited(email);
+      if (!isInvited) {
+        isLoggingIn.current = false;
+        const errorMessage = 'No user account found. Please contact an administrator to request access.';
+        setState(prev => ({ ...prev, error: errorMessage, loading: false }));
+        return { error: { message: errorMessage } };
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -209,6 +227,15 @@ export function useAuth() {
 
   const sendPasswordReset = useCallback(async (email: string) => {
     setState(prev => ({ ...prev, error: null }));
+    
+    // Pre-validate email before sending reset link
+    const isInvited = await isEmailInvited(email);
+    if (!isInvited) {
+      const errorMessage = 'No user account found. Please contact an administrator to request access.';
+      setState(prev => ({ ...prev, error: errorMessage }));
+      return { error: { message: errorMessage } };
+    }
+    
     // Use environment variable for production URL, fallback to window.location.origin
     const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {

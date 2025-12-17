@@ -30,8 +30,10 @@ export function AuthCallback() {
           } else if (roleData?.role === 'client') {
             navigate('/interview', { replace: true });
           } else {
-            // No role yet - might be first-time signup without invite
-            navigate('/', { replace: true });
+            // No role found - unauthorized access
+            setError('Your account is pending activation. Please contact an administrator.');
+            // Sign them out to prevent confusion
+            await supabase.auth.signOut();
           }
         } else {
           navigate('/login', { replace: true });

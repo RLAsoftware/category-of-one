@@ -90,3 +90,25 @@ export async function updateLLMConfig(
   return data as LLMConfig;
 }
 
+export async function isEmailInvited(email: string): Promise<boolean> {
+  const normalizedEmail = email.toLowerCase().trim();
+  
+  // Check clients table
+  const { data: clientData } = await supabase
+    .from('clients')
+    .select('email')
+    .eq('email', normalizedEmail)
+    .single();
+  
+  if (clientData) return true;
+  
+  // Check admin_invites table
+  const { data: adminData } = await supabase
+    .from('admin_invites')
+    .select('email')
+    .eq('email', normalizedEmail)
+    .single();
+  
+  return !!adminData;
+}
+
