@@ -45,6 +45,11 @@ export function ChatInterface({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Allow all system shortcuts (CMD/CTRL + any key)
+    if (e.metaKey || e.ctrlKey) {
+      return;
+    }
+    
     // Submit on Enter (without Shift)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
