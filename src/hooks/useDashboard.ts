@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, getClientSessions, getDeletedSessions, getLatestProfileForClient, softDeleteSession, restoreSession, searchSessions, filterSessionsByStatus } from '../lib/supabase';
+import { supabase, getClientSessions, getDeletedSessions, getLatestProfileForClient, softDeleteSession, restoreSession, searchSessions } from '../lib/supabase';
 import type { InterviewSession, CategoryOfOneProfile } from '../lib/types';
 
 interface UseDashboardOptions {
@@ -12,7 +12,6 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
   const [latestProfile, setLatestProfile] = useState<CategoryOfOneProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'in_progress' | 'completed'>('all');
 
   // Fetch all sessions
   const fetchSessions = useCallback(async () => {
@@ -22,11 +21,9 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     try {
       let sessionData: InterviewSession[];
       
-      // Apply search or filter
+      // Apply search if query exists
       if (searchQuery.trim()) {
         sessionData = await searchSessions(clientId, searchQuery);
-      } else if (statusFilter !== 'all') {
-        sessionData = await filterSessionsByStatus(clientId, statusFilter);
       } else {
         sessionData = await getClientSessions(clientId);
       }
@@ -38,7 +35,7 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     } finally {
       setLoading(false);
     }
-  }, [clientId, searchQuery, statusFilter]);
+  }, [clientId, searchQuery]);
 
   // Fetch deleted sessions for "Recently Deleted" section
   const fetchDeletedSessions = useCallback(async () => {
@@ -140,12 +137,12 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     };
   }, [clientId, fetchSessions, fetchDeletedSessions, fetchLatestProfile]);
 
-  // Re-fetch when search or filter changes
+  // Re-fetch when search changes
   useEffect(() => {
     if (clientId) {
       fetchSessions();
     }
-  }, [searchQuery, statusFilter, fetchSessions, clientId]);
+  }, [searchQuery, fetchSessions, clientId]);
 
   return {
     sessions,
@@ -154,8 +151,6 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     loading,
     searchQuery,
     setSearchQuery,
-    statusFilter,
-    setStatusFilter,
     deleteSession,
     restoreSession: restoreDeletedSession,
     refreshSessions: fetchSessions,

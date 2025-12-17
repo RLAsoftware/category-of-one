@@ -27,8 +27,6 @@ export function Dashboard() {
     loading: dashboardLoading,
     searchQuery,
     setSearchQuery,
-    statusFilter,
-    setStatusFilter,
     deleteSession,
     refreshSessions,
   } = useDashboard({
@@ -166,7 +164,7 @@ export function Dashboard() {
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 text-sunset animate-spin" />
             </div>
-          ) : sessions.length === 0 && !searchQuery && statusFilter === 'all' ? (
+          ) : sessions.length === 0 && !searchQuery ? (
             // Empty State for first-time users
             <EmptyState onStartInterview={handleStartNewInterview} />
           ) : (
@@ -195,10 +193,9 @@ export function Dashboard() {
                 </Button>
               </div>
 
-              {/* Search and Filter Bar */}
-              <div className="mb-6 flex flex-col sm:flex-row gap-4">
-                {/* Search Input */}
-                <div className="flex-1 relative">
+              {/* Search Bar */}
+              <div className="mb-6">
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate" />
                   <input
                     type="text"
@@ -207,31 +204,6 @@ export function Dashboard() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 rounded-lg border border-ink/10 focus:border-sunset focus:outline-none focus:ring-2 focus:ring-sunset/20 transition-colors"
                   />
-                </div>
-
-                {/* Filter Buttons */}
-                <div className="flex gap-2">
-                  <Button
-                    variant={statusFilter === 'all' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setStatusFilter('all')}
-                  >
-                    All
-                  </Button>
-                  <Button
-                    variant={statusFilter === 'in_progress' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setStatusFilter('in_progress')}
-                  >
-                    In Progress
-                  </Button>
-                  <Button
-                    variant={statusFilter === 'completed' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setStatusFilter('completed')}
-                  >
-                    Completed
-                  </Button>
                 </div>
               </div>
 
