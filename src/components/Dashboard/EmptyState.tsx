@@ -16,9 +16,6 @@ export function EmptyState({ onStartInterview }: EmptyStateProps) {
         <h1 className="text-4xl font-display mb-4">
           Discover Your Category of One
         </h1>
-        <p className="text-xl text-slate max-w-2xl mx-auto leading-relaxed">
-          Have a conversation with our AI strategist to uncover what makes you uniquely valuable in your market.
-        </p>
       </div>
 
       {/* What to Expect */}
