@@ -6,12 +6,27 @@ import type { LLMConfig } from './types';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// CRITICAL: Validate we're using the correct production Supabase project
+const EXPECTED_SUPABASE_URL = 'https://oonsnlwzipwdnbicqysr.supabase.co';
+
 if (!supabaseUrl || !supabaseKey) {
   const missing = [];
   if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
   if (!supabaseKey) missing.push('VITE_SUPABASE_PUBLISHABLE_KEY (or VITE_SUPABASE_ANON_KEY)');
   throw new Error(`Missing Supabase environment variables: ${missing.join(', ')}. Please ensure these are set in your Vercel project settings.`);
 }
+
+// Validate we're connected to the correct Supabase project
+if (supabaseUrl !== EXPECTED_SUPABASE_URL) {
+  throw new Error(
+    `❌ WRONG SUPABASE PROJECT DETECTED!\n\n` +
+    `Expected: ${EXPECTED_SUPABASE_URL}\n` +
+    `Got: ${supabaseUrl}\n\n` +
+    `Please update VITE_SUPABASE_URL in your environment variables.`
+  );
+}
+
+console.log('✅ Connected to correct Supabase project:', supabaseUrl);
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
