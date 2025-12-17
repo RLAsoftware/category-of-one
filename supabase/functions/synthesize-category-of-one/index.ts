@@ -363,8 +363,8 @@ function createMinimalProfile(clientName: string): CategoryOfOneProfile {
     },
     unique_methodology: {
       name: null,
-      description: null,
-      steps: []
+      steps_or_components: [],
+      what_makes_it_distinctive: null
     },
     voice_and_language: {
       distinctive_phrases: [],
