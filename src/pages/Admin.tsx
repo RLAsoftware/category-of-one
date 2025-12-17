@@ -63,6 +63,11 @@ export function Admin() {
     setView('list');
   };
 
+  const handleClientDeleted = () => {
+    setSelectedClient(null);
+    setView('list');
+  };
+
   // Show loading while auth is loading
   if (loading) {
     return (
@@ -143,6 +148,7 @@ export function Admin() {
             <ClientDetail
               client={selectedClient}
               onBack={handleBackToList}
+              onDelete={handleClientDeleted}
             />
           ) : null
         ) : (

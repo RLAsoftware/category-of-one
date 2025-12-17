@@ -14,18 +14,21 @@ import {
   Calendar,
   Copy,
   Check,
+  Trash2,
 } from 'lucide-react';
 
 interface ClientDetailProps {
   client: Client;
   onBack: () => void;
+  onDelete?: () => void;
 }
 
-export function ClientDetail({ client, onBack }: ClientDetailProps) {
+export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
   const [profiles, setProfiles] = useState<StyleProfile[]>([]);
   const [categoryProfiles, setCategoryProfiles] = useState<CategoryOfOneProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -70,6 +73,41 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
     await navigator.clipboard.writeText(profile);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDeleteClient = async () => {
+    const confirmMessage = client.user_id
+      ? `Are you sure you want to delete ${client.name}? This will permanently delete their account, all profiles, and interview data. This action cannot be undone.`
+      : `Are you sure you want to delete ${client.name}? This will permanently delete all their data. This action cannot be undone.`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc('delete_client_and_user', {
+        client_id_param: client.id,
+      });
+
+      if (error) {
+        console.error('Error deleting client:', error);
+        alert('Failed to delete client. Please try again.');
+        setDeleting(false);
+        return;
+      }
+
+      // Call the onDelete callback if provided, otherwise just go back
+      if (onDelete) {
+        onDelete();
+      } else {
+        onBack();
+      }
+    } catch (err) {
+      console.error('Error deleting client:', err);
+      alert('Failed to delete client. Please try again.');
+      setDeleting(false);
+    }
   };
 
   const latestCategoryProfile = categoryProfiles[0] || null;
@@ -125,16 +163,27 @@ export function ClientDetail({ client, onBack }: ClientDetailProps) {
             </div>
           </div>
           
-          {!client.user_id && (
+          <div className="flex items-center gap-3">
+            {!client.user_id && (
+              <Button
+                onClick={handleSendInvite}
+                loading={sendingInvite}
+                variant="secondary"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {client.invite_sent_at ? 'Resend Invite' : 'Send Invite'}
+              </Button>
+            )}
             <Button
-              onClick={handleSendInvite}
-              loading={sendingInvite}
+              onClick={handleDeleteClient}
+              loading={deleting}
               variant="secondary"
+              className="!text-error hover:!bg-error/10"
             >
-              <Send className="w-4 h-4 mr-2" />
-              {client.invite_sent_at ? 'Resend Invite' : 'Send Invite'}
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Client
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Status */}
