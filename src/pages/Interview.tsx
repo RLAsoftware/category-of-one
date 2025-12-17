@@ -144,12 +144,6 @@ export function Interview() {
           </div>
 
           <div className="flex items-center gap-3">
-            {!isCompleted && messages.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={handleStartFromScratch}>
-                <RefreshCw className="w-4 h-4" />
-                <span className="hidden sm:inline ml-2">Start from Scratch</span>
-              </Button>
-            )}
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-xs text-slate/70">Welcome back</span>
               <span className="text-sm font-medium text-ink">{client.name}</span>
@@ -203,6 +197,7 @@ export function Interview() {
               isStreaming={isStreaming}
               isSynthesizing={isSynthesizing}
               onSendMessage={sendMessage}
+              onStartFromScratch={!isCompleted ? handleStartFromScratch : undefined}
               error={error}
             />
           </>

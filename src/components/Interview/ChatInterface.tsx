@@ -8,6 +8,7 @@ interface ChatInterfaceProps {
   isStreaming: boolean;
   isSynthesizing: boolean;
   onSendMessage: (content: string) => void;
+  onStartFromScratch?: () => void;
   error?: string | null;
 }
 
@@ -16,6 +17,7 @@ export function ChatInterface({
   isStreaming,
   isSynthesizing,
   onSendMessage,
+  onStartFromScratch,
   error,
 }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
@@ -168,9 +170,20 @@ export function ChatInterface({
                 </div>
               </div>
 
-              <p className="text-[11px] text-slate mt-2 text-center">
-                Press Enter to send, Shift+Enter for new line
-              </p>
+              <div className="flex items-center justify-center gap-2 text-[11px] text-slate mt-2">
+                <span>Press Enter to send, Shift+Enter for new line</span>
+                {onStartFromScratch && messages.length > 0 && (
+                  <>
+                    <span>•</span>
+                    <button
+                      onClick={onStartFromScratch}
+                      className="text-sunset hover:text-sunset-dark underline transition-colors"
+                    >
+                      Start from scratch
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
