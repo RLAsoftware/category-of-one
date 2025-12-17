@@ -543,24 +543,43 @@ export function useCategoryOfOneChat({
     setError(null);
 
     try {
+      // Delete any associated profile first
+      const { error: profileDeleteError } = await supabase
+        .from('category_of_one_profiles')
+        .delete()
+        .eq('session_id', session.id);
+
+      if (profileDeleteError) {
+        console.error('Error deleting profile:', profileDeleteError);
+      }
+
       // Delete all messages from the current session
-      await supabase
+      const { error: messagesDeleteError } = await supabase
         .from('chat_messages')
         .delete()
         .eq('session_id', session.id);
 
-      // Reset session status and message count
-      await supabase
+      if (messagesDeleteError) {
+        throw new Error(`Failed to delete messages: ${messagesDeleteError.message}`);
+      }
+
+      // Reset session to initial state
+      const { error: updateError } = await supabase
         .from('interview_sessions')
         .update({
           status: 'chatting',
           message_count: 0,
           flagged_for_review: false,
           completed_at: null,
+          last_message_at: null,
         })
         .eq('id', session.id);
 
-      // Clear local state
+      if (updateError) {
+        throw new Error(`Failed to reset session: ${updateError.message}`);
+      }
+
+      // Clear local state completely
       setMessages([]);
       setProfile(null);
       setSession(prev => prev ? {
@@ -569,12 +588,17 @@ export function useCategoryOfOneChat({
         message_count: 0,
         flagged_for_review: false,
         completed_at: null,
+        last_message_at: null,
       } : null);
+
+      // Small delay to ensure database operations complete
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Start fresh conversation in the same session
       await startNewConversation(session.id);
 
     } catch (err) {
+      console.error('Reset chat error:', err);
       setError(err instanceof Error ? err.message : 'Failed to reset chat');
     } finally {
       setIsLoading(false);
