@@ -56,10 +56,10 @@ export function ChatInterface({
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
     
-    // Auto-resize
+    // Auto-resize - grow naturally up to max height
     const textarea = e.target;
     textarea.style.height = 'auto';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    textarea.style.height = `${textarea.scrollHeight}px`;
   };
 
   return (
@@ -143,8 +143,8 @@ export function ChatInterface({
                       }
                       disabled={isStreaming || isSynthesizing}
                       rows={1}
-                      className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-sm leading-relaxed py-1"
-                      style={{ minHeight: '40px', maxHeight: '120px' }}
+                      className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-sm leading-relaxed py-1 overflow-hidden"
+                      style={{ minHeight: '40px', maxHeight: '200px' }}
                     />
 
                     <button
