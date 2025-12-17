@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/Auth/LoginForm';
 import { useAuth } from '../hooks/useAuth';
-import { getClientByUserId, hasClientHistory } from '../lib/supabase';
+import { supabase, getClientByUserId, hasClientHistory } from '../lib/supabase';
 
 export function Login() {
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ export function Login() {
       console.log('Login redirect:', role);
       if (role === 'admin') {
         navigate('/admin', { replace: true });
-      } else {
+      } else if (role === 'client') {
         // For clients, check if they have history to decide where to redirect
         (async () => {
           const client = await getClientByUserId(user.id);
@@ -50,6 +50,24 @@ export function Login() {
           } else {
             // No client profile, shouldn't happen but redirect to interview as fallback
             navigate('/interview', { replace: true });
+          }
+        })();
+      } else if (role === null && user.email) {
+        // No role assigned - check if this is an invited client
+        (async () => {
+          const { data: clientData } = await supabase.from('clients')
+            .select('*')
+            .ilike('email', user.email!)
+            .maybeSingle();
+
+          if (clientData) {
+            // Auto-activate: link user and create role
+            await supabase.from('clients').update({ user_id: user.id }).eq('id', clientData.id);
+            await supabase.from('user_roles').insert({ user_id: user.id, role: 'client' });
+            
+            // Redirect based on history
+            const hasHistory = await hasClientHistory(clientData.id);
+            navigate(hasHistory ? '/dashboard' : '/interview', { replace: true });
           }
         })();
       }
