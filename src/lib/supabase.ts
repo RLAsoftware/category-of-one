@@ -87,9 +87,6 @@ export async function updateLLMConfig(
   // Get current user ID
   const { data: { user } } = await supabase.auth.getUser();
   
-  console.log('[updateLLMConfig] Starting update for:', name);
-  console.log('[updateLLMConfig] User ID:', user?.id);
-  
   const { data, error } = await supabase
     .from('llm_configs')
     .update({
@@ -102,8 +99,6 @@ export async function updateLLMConfig(
     .eq('name', name)
     .select('*')
     .single();
-
-  console.log('[updateLLMConfig] Response:', { data, error });
 
   if (error) {
     console.error('updateLLMConfig error:', error.message);
