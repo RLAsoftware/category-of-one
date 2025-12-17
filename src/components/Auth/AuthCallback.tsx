@@ -48,37 +48,28 @@ export function AuthCallback() {
           } else {
             // No role found - check if this user was invited as a client
             if (userEmail) {
-              const { data: clientData } = await supabase
-                .from('clients')
-                .select('*')
-                .ilike('email', userEmail)
-                .maybeSingle();
+              // Call database function to auto-activate client
+              const { data: activationResult, error: activationError } = await supabase
+                .rpc('auto_activate_client', {
+                  p_user_id: userId,
+                  p_email: userEmail
+                });
 
-              if (clientData) {
-                // This is a valid client who was invited by an admin
-                // Auto-activate them by:
-                // 1. Linking auth user to client record
-                await supabase
-                  .from('clients')
-                  .update({ user_id: userId })
-                  .eq('id', clientData.id);
-
-                // 2. Creating user_roles entry
-                await supabase
-                  .from('user_roles')
-                  .insert({
-                    user_id: userId,
-                    role: 'client'
-                  });
-
-                // 3. Redirect based on their history
-                const hasHistory = await hasClientHistory(clientData.id);
+              if (activationResult?.success) {
+                // Client activated successfully
+                const clientId = activationResult.client_id;
+                
+                // Redirect based on their history
+                const hasHistory = await hasClientHistory(clientId);
                 if (hasHistory) {
                   navigate('/dashboard', { replace: true });
                 } else {
                   navigate('/interview', { replace: true });
                 }
                 return;
+              } else {
+                // Activation failed - show error
+                console.error('Auto-activation failed:', activationResult?.error || activationError);
               }
             }
 

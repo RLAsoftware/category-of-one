@@ -55,18 +55,15 @@ export function Login() {
       } else if (role === null && user.email) {
         // No role assigned - check if this is an invited client
         (async () => {
-          const { data: clientData } = await supabase.from('clients')
-            .select('*')
-            .ilike('email', user.email!)
-            .maybeSingle();
+          // Call database function to auto-activate client
+          const { data: activationResult } = await supabase.rpc('auto_activate_client', {
+            p_user_id: user.id,
+            p_email: user.email
+          });
 
-          if (clientData) {
-            // Auto-activate: link user and create role
-            await supabase.from('clients').update({ user_id: user.id }).eq('id', clientData.id);
-            await supabase.from('user_roles').insert({ user_id: user.id, role: 'client' });
-            
-            // Redirect based on history
-            const hasHistory = await hasClientHistory(clientData.id);
+          if (activationResult?.success) {
+            // Client activated successfully
+            const hasHistory = await hasClientHistory(activationResult.client_id);
             navigate(hasHistory ? '/dashboard' : '/interview', { replace: true });
           }
         })();
