@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/Auth/LoginForm';
 import { useAuth } from '../hooks/useAuth';
+import { getClientByUserId, hasClientHistory } from '../lib/supabase';
 
 export function Login() {
   const navigate = useNavigate();
@@ -31,13 +32,26 @@ export function Login() {
     if (loading) return;
 
     // Redirect any authenticated user
-    // Admins go to /admin, everyone else goes to /interview
     if (user) {
       console.log('Login redirect:', role);
       if (role === 'admin') {
         navigate('/admin', { replace: true });
       } else {
-        navigate('/interview', { replace: true });
+        // For clients, check if they have history to decide where to redirect
+        (async () => {
+          const client = await getClientByUserId(user.id);
+          if (client) {
+            const hasHistory = await hasClientHistory(client.id);
+            if (hasHistory) {
+              navigate('/dashboard', { replace: true });
+            } else {
+              navigate('/interview', { replace: true });
+            }
+          } else {
+            // No client profile, shouldn't happen but redirect to interview as fallback
+            navigate('/interview', { replace: true });
+          }
+        })();
       }
     }
     // If user is explicitly null (not just loading), stay on login page

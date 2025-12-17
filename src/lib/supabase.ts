@@ -459,3 +459,34 @@ export async function getSessionMessageCount(sessionId: string) {
   return count || 0;
 }
 
+/**
+ * Check if a client has any chat or profile history
+ * Returns true if they have any sessions or completed profiles
+ */
+export async function hasClientHistory(clientId: string): Promise<boolean> {
+  // Check for any non-deleted sessions
+  const { count: sessionCount, error: sessionError } = await supabase
+    .from('interview_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('client_id', clientId)
+    .is('deleted_at', null);
+
+  if (sessionError) {
+    console.error('hasClientHistory session check error:', sessionError.message);
+    return false;
+  }
+
+  // Check for any profiles
+  const { count: profileCount, error: profileError } = await supabase
+    .from('category_of_one_profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('client_id', clientId);
+
+  if (profileError) {
+    console.error('hasClientHistory profile check error:', profileError.message);
+    return false;
+  }
+
+  return (sessionCount || 0) > 0 || (profileCount || 0) > 0;
+}
+
