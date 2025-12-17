@@ -95,16 +95,27 @@ export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
     setSaved(false);
 
     try {
-      const updated = await updateLLMConfig('category_of_one', {
+      // Add timeout to prevent infinite spinning
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Save request timed out after 30 seconds')), 30000);
+      });
+
+      const updatePromise = updateLLMConfig('category_of_one', {
         model: model.trim(),
         chat_system_prompt: chatPrompt,
         synthesis_system_prompt: synthesisPrompt,
       });
+
+      const updated = await Promise.race([updatePromise, timeoutPromise]);
+      
       if (updated) {
         setConfig(updated);
         setSaved(true);
+      } else {
+        setError('Update returned no data. Please refresh and try again.');
       }
     } catch (err) {
+      console.error('LLM Config save error:', err);
       setError(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {
       setSaving(false);
