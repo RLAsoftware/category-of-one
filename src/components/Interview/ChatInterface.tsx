@@ -128,7 +128,7 @@ export function ChatInterface({
             <div className="relative">
               <div className="flex items-end">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 bg-white rounded-full shadow-soft-input px-6 py-3">
+                  <div className="flex items-end gap-3 bg-white rounded-3xl shadow-soft-input px-6 py-3">
                     <textarea
                       ref={textareaRef}
                       value={inputValue}
@@ -143,15 +143,15 @@ export function ChatInterface({
                       }
                       disabled={isStreaming || isSynthesizing}
                       rows={1}
-                      className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-sm leading-relaxed py-1 overflow-hidden"
-                      style={{ minHeight: '40px', maxHeight: '200px' }}
+                      className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-base leading-relaxed py-2 overflow-hidden"
+                      style={{ minHeight: '24px', maxHeight: '200px' }}
                     />
 
                     <button
                       type="button"
                       onClick={handleSubmit}
                       disabled={!inputValue.trim() || isStreaming || isSynthesizing}
-                      className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-tr from-sunset to-amber-400 text-white shadow-soft-input disabled:opacity-50 disabled:cursor-not-allowed transition-transform duration-150 hover:translate-y-0.5"
+                      className="inline-flex items-center justify-center h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-tr from-sunset to-amber-400 text-white shadow-soft-input disabled:opacity-50 disabled:cursor-not-allowed transition-transform duration-150 hover:translate-y-0.5"
                     >
                       {isStreaming ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
