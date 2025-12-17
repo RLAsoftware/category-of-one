@@ -95,22 +95,39 @@ export async function isEmailInvited(email: string): Promise<boolean> {
   
   console.log('[isEmailInvited] Checking authorization for:', normalizedEmail);
   
-  // Use database function to check if email is authorized
-  // This checks: clients table, admin_invites table, and user_roles
-  const { data, error } = await supabase.rpc('check_email_authorized', {
-    user_email: normalizedEmail
-  });
+  // Check clients table
+  const { data: clientData, error: clientError } = await supabase
+    .from('clients')
+    .select('email')
+    .ilike('email', normalizedEmail)
+    .maybeSingle();
   
-  console.log('[isEmailInvited] RPC response:', { data, error });
-  
-  if (error) {
-    console.error('[isEmailInvited] Error checking email authorization:', error);
-    // On error, DENY access for security - do not allow unauthorized attempts
-    return false;
+  if (clientError && clientError.code !== 'PGRST116') {
+    console.error('[isEmailInvited] Error checking clients:', clientError);
   }
   
-  const isAuthorized = data === true;
-  console.log('[isEmailInvited] Result:', isAuthorized);
-  return isAuthorized;
+  if (clientData) {
+    console.log('[isEmailInvited] Found in clients table');
+    return true;
+  }
+  
+  // Check admin_invites table
+  const { data: adminData, error: adminError } = await supabase
+    .from('admin_invites')
+    .select('email')
+    .ilike('email', normalizedEmail)
+    .maybeSingle();
+  
+  if (adminError && adminError.code !== 'PGRST116') {
+    console.error('[isEmailInvited] Error checking admin_invites:', adminError);
+  }
+  
+  if (adminData) {
+    console.log('[isEmailInvited] Found in admin_invites table');
+    return true;
+  }
+  
+  console.log('[isEmailInvited] Not authorized - not found in clients or admin_invites');
+  return false;
 }
 
