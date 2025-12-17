@@ -15,6 +15,8 @@ import {
   Copy,
   Check,
   Trash2,
+  Users,
+  Settings,
 } from 'lucide-react';
 
 interface ClientDetailProps {
@@ -136,7 +138,7 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
       </button>
 
       {/* Client Header */}
-      <Card variant="elevated" className="mb-6">
+      <Card variant="elevated" className="mb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-full bg-sunset/10 flex items-center justify-center">
@@ -164,176 +166,182 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
           </div>
           
           <div className="flex items-center gap-3">
-            {!client.user_id && (
-              <Button
-                onClick={handleSendInvite}
-                loading={sendingInvite}
-                variant="secondary"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {client.invite_sent_at ? 'Resend Invite' : 'Send Invite'}
-              </Button>
-            )}
+            <Button
+              onClick={handleSendInvite}
+              loading={sendingInvite}
+              disabled={client.user_id !== null}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Resend Invite
+            </Button>
             <Button
               onClick={handleDeleteClient}
               loading={deleting}
               variant="secondary"
-              className="!text-error hover:!bg-error/10"
+              className="border-2 border-error !text-error hover:!bg-error/10"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Client
             </Button>
           </div>
         </div>
-
-        {/* Status */}
-        <div className="mt-4 pt-4 border-t border-ink/10">
-          <div className="flex items-center gap-2">
-            {client.user_id ? (
-              <>
-                <CheckCircle className="w-5 h-5 text-success" />
-                <span className="text-success">Account Active</span>
-              </>
-            ) : client.invite_sent_at ? (
-              <>
-                <Clock className="w-5 h-5 text-terracotta" />
-                <span className="text-terracotta">
-                  Invite sent {new Date(client.invite_sent_at).toLocaleDateString()}
-                </span>
-              </>
-            ) : (
-              <>
-                <Clock className="w-5 h-5 text-slate" />
-                <span className="text-slate">Pending invite</span>
-              </>
-            )}
-          </div>
-        </div>
       </Card>
 
-      {/* Category of One Outputs */}
-      <Card variant="bordered" className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+      {/* Status Badge */}
+      <div className="mb-6">
+        {client.user_id ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10">
+            <CheckCircle className="w-5 h-5 text-success" />
+            <span className="text-success font-medium">Account Active</span>
+          </div>
+        ) : client.invite_sent_at ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-terracotta/10">
+            <Clock className="w-5 h-5 text-terracotta" />
+            <span className="text-terracotta font-medium">
+              Invite sent {new Date(client.invite_sent_at).toLocaleDateString()}
+            </span>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate/10">
+            <Clock className="w-5 h-5 text-slate" />
+            <span className="text-slate font-medium">Pending invite</span>
+          </div>
+        )}
+      </div>
+
+      {/* Two-Column Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Category of One Outputs */}
+        <Card variant="bordered" className="h-full">
+          <div className="flex items-center gap-2 mb-4">
             <FileText className="w-5 h-5 text-sunset" />
             <h2 className="text-lg">Category of One Outputs</h2>
           </div>
-        </div>
 
-        {loading ? (
-          <div className="space-y-2">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-16 bg-ink/5 rounded-lg animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <>
-            {latestCategoryProfile ? (
-              <div className="mb-6">
-                <p className="text-xs text-slate mb-3">
-                  These markdown files were generated from the latest completed interview.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      downloadMarkdown(
-                        `category-of-one-full-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
-                        latestCategoryProfile.raw_profile
-                      )
-                    }
-                  >
-                    <FileText className="w-4 h-4 mr-1" />
-                    Full profile
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      downloadMarkdown(
-                        `business-profile-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
-                        latestCategoryProfile.business_profile_md
-                      )
-                    }
-                  >
-                    <FileText className="w-4 h-4 mr-1" />
-                    business-profile.md
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      downloadMarkdown(
-                        `category-of-one-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
-                        latestCategoryProfile.category_of_one_md || latestCategoryProfile.raw_profile
-                      )
-                    }
-                  >
-                    <FileText className="w-4 h-4 mr-1" />
-                    category-of-one.md
-                  </Button>
+          {loading ? (
+            <div className="space-y-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-16 bg-ink/5 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <>
+              {latestCategoryProfile ? (
+                <div>
+                  <p className="text-xs text-slate mb-3">
+                    These markdown files were generated from the latest completed interview.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() =>
+                        downloadMarkdown(
+                          `category-of-one-full-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
+                          latestCategoryProfile.raw_profile
+                        )
+                      }
+                    >
+                      <FileText className="w-4 h-4 mr-1" />
+                      Full profile
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() =>
+                        downloadMarkdown(
+                          `business-profile-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
+                          latestCategoryProfile.business_profile_md
+                        )
+                      }
+                    >
+                      <FileText className="w-4 h-4 mr-1" />
+                      business-profile.md
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() =>
+                        downloadMarkdown(
+                          `category-of-one-${client.name.toLowerCase().replace(/\s+/g, '-')}.md`,
+                          latestCategoryProfile.category_of_one_md || latestCategoryProfile.raw_profile
+                        )
+                      }
+                    >
+                      <FileText className="w-4 h-4 mr-1" />
+                      category-of-one.md
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-20 h-20 rounded-full bg-sunset/10 flex items-center justify-center mb-4">
+                    <FileText className="w-10 h-10 text-sunset" />
+                  </div>
+                  <p className="text-sm text-slate max-w-xs">
+                    No outputs yet. Once the client completes their interview, the generated markdown files will appear here.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </Card>
+
+        {/* Style Profiles */}
+        <Card variant="bordered" className="h-full">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-5 h-5 text-sunset" />
+            <h2 className="text-lg">Style Profiles</h2>
+          </div>
+
+          {loading ? (
+            <div className="h-24 bg-ink/5 rounded-lg animate-pulse" />
+          ) : profiles.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-20 h-20 rounded-full bg-sunset/10 flex items-center justify-center mb-4">
+                <Settings className="w-10 h-10 text-sunset" />
               </div>
-            ) : (
-              <p className="text-xs text-slate mb-6">
-                No Category of One outputs yet. Once the client completes their interview, the
-                generated markdown files will appear here.
+              <p className="text-sm text-slate max-w-xs">
+                No style profiles yet. The client needs to complete an interview first.
               </p>
-            )}
-          </>
-        )}
-      </Card>
-
-      {/* Style Profiles */}
-      <Card variant="bordered">
-        <div className="flex items-center gap-2 mb-4">
-          <CheckCircle className="w-5 h-5 text-success" />
-          <h2 className="text-lg">Style Profiles</h2>
-        </div>
-
-        {loading ? (
-          <div className="h-24 bg-ink/5 rounded-lg animate-pulse" />
-        ) : profiles.length === 0 ? (
-          <p className="text-slate text-center py-8">
-            No style profiles yet. The client needs to complete an interview first.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {profiles.map((profile) => (
-              <div
-                key={profile.id}
-                className="p-4 rounded-lg bg-cream"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <span className="text-sm text-slate">
-                    Created {new Date(profile.created_at).toLocaleDateString()}
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={() => handleCopyProfile(profile.raw_profile)}
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-4 h-4 mr-1" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4 mr-1" />
-                        Copy
-                      </>
-                    )}
-                  </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {profiles.map((profile) => (
+                <div
+                  key={profile.id}
+                  className="p-4 rounded-lg bg-cream"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-sm text-slate">
+                      Created {new Date(profile.created_at).toLocaleDateString()}
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={() => handleCopyProfile(profile.raw_profile)}
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-4 h-4 mr-1" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 mr-1" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <div className="text-sm text-ink/80 whitespace-pre-wrap line-clamp-4">
+                    {profile.raw_profile}
+                  </div>
                 </div>
-                <div className="text-sm text-ink/80 whitespace-pre-wrap line-clamp-4">
-                  {profile.raw_profile}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
