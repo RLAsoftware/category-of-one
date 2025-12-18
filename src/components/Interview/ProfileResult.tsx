@@ -8,8 +8,6 @@ interface ProfileResultProps {
   clientName: string;
   onReset: () => void;
   onExportFull: () => void;
-  onExportBusiness: () => void;
-  onExportCategory: () => void;
 }
 
 export function ProfileResult({
@@ -17,8 +15,6 @@ export function ProfileResult({
   clientName,
   onReset,
   onExportFull,
-  onExportBusiness,
-  onExportCategory,
 }: ProfileResultProps) {
   const navigate = useNavigate();
 
@@ -376,14 +372,6 @@ export function ProfileResult({
         <Button onClick={onExportFull} variant="primary" className="gap-2">
           <Download className="w-4 h-4" />
           Export full profile
-        </Button>
-        <Button onClick={onExportBusiness} variant="secondary" className="gap-2">
-          <Download className="w-4 h-4" />
-          Export business profile
-        </Button>
-        <Button onClick={onExportCategory} variant="secondary" className="gap-2">
-          <Download className="w-4 h-4" />
-          Export category of one
         </Button>
         <Button onClick={onReset} variant="ghost" className="gap-2">
           <RefreshCw className="w-4 h-4" />

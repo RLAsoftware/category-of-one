@@ -58,9 +58,7 @@ export function Interview() {
     sendMessage,
     synthesizeProfile,
     resetChat,
-    exportProfileAsMarkdown,
-    exportBusinessProfile,
-    exportCategoryOfOneDoc,
+    exportProfileAsPdf,
   } = useCategoryOfOneChat({
     clientId: client?.id || '',
     clientName: client?.name || '',
@@ -189,9 +187,7 @@ export function Interview() {
               profile={profile}
               clientName={client.name}
               onReset={resetChat}
-              onExportFull={exportProfileAsMarkdown}
-              onExportBusiness={exportBusinessProfile}
-              onExportCategory={exportCategoryOfOneDoc}
+              onExportFull={exportProfileAsPdf}
             />
           </div>
         ) : (
