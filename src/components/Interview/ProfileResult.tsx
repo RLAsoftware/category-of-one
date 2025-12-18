@@ -1,4 +1,4 @@
-import { Download, RefreshCw, Target, Sparkles, Users, Lightbulb, TrendingUp, Trophy, ArrowLeft, Compass, Briefcase, MessageCircle } from 'lucide-react';
+import { Download, Target, Sparkles, Users, Lightbulb, TrendingUp, Trophy, ArrowLeft, Compass, Briefcase, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../ui';
 import type { CategoryOfOneProfile } from '../../lib/types';
@@ -6,14 +6,12 @@ import type { CategoryOfOneProfile } from '../../lib/types';
 interface ProfileResultProps {
   profile: CategoryOfOneProfile;
   clientName: string;
-  onReset: () => void;
   onExportFull: () => void;
 }
 
 export function ProfileResult({
   profile,
   clientName,
-  onReset,
   onExportFull,
 }: ProfileResultProps) {
   const navigate = useNavigate();

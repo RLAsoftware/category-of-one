@@ -186,7 +186,6 @@ export function Interview() {
             <ProfileResult
               profile={profile}
               clientName={client.name}
-              onReset={resetChat}
               onExportFull={exportProfileAsMarkdown}
             />
           </div>
