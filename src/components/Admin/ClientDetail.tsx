@@ -143,14 +143,15 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
 
       {/* Client Header */}
       <Card variant="elevated" className="mb-4">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Left: Identity */}
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-full bg-sunset/10 flex items-center justify-center">
               <User className="w-7 h-7 text-sunset" />
             </div>
-            <div>
-              <h1 className="text-2xl mb-1">{client.name}</h1>
-              <div className="flex items-center gap-4 text-sm text-slate">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold leading-tight">{client.name}</h1>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate">
                 <span className="flex items-center gap-1">
                   <Mail className="w-4 h-4" />
                   {client.email}
@@ -168,10 +169,12 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
               </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-3">
+
+          {/* Right: Actions */}
+          <div className="flex flex-wrap items-center gap-3 justify-start md:justify-end">
             <Button
               variant="secondary"
+              className="border-sunset/40 text-sunset hover:bg-sunset/5"
               onClick={() => {
                 startImpersonation(client);
                 navigate('/dashboard');
@@ -183,6 +186,7 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
               onClick={handleSendInvite}
               loading={sendingInvite}
               disabled={client.user_id !== null}
+              className="bg-sunset/10 text-sunset hover:bg-sunset/20"
             >
               <Send className="w-4 h-4 mr-2" />
               Resend Invite
@@ -191,7 +195,7 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
               onClick={handleDeleteClient}
               loading={deleting}
               variant="secondary"
-              className="border-2 border-error !text-error hover:!bg-error/10"
+              className="border-error/60 text-error hover:bg-error/5"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Client
