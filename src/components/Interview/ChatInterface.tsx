@@ -52,6 +52,30 @@ export function ChatInterface({
     textareaRef.current?.focus();
   }, []);
 
+  // Track previous streaming state to detect when streaming completes
+  const prevStreamingRef = useRef(isActuallyStreaming);
+  
+  // Auto-focus textarea when streaming completes
+  useEffect(() => {
+    // Detect transition from streaming to not streaming
+    const wasStreaming = prevStreamingRef.current;
+    const isNowStreaming = isActuallyStreaming;
+    
+    // Update ref for next comparison
+    prevStreamingRef.current = isActuallyStreaming;
+    
+    // Focus when streaming completes (was streaming, now not streaming)
+    // Only if we're not synthesizing and have messages
+    if (wasStreaming && !isNowStreaming && !isSynthesizing && messages.length > 0) {
+      // Small delay to ensure the UI has updated and scrolling is complete
+      const timeoutId = setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 150);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isActuallyStreaming, isSynthesizing, messages.length]);
+
   const handleSubmit = () => {
     if (!inputValue.trim() || isActuallyStreaming || isSynthesizing) return;
     

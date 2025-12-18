@@ -107,8 +107,6 @@ export function useCategoryOfOneChat({
         currentSession = newSession;
       }
 
-      setSession(currentSession);
-
       // Load existing messages if any
       if (currentSession) {
         const { data: chatMessages, error: messagesError } = await supabase
@@ -118,6 +116,37 @@ export function useCategoryOfOneChat({
           .order('created_at', { ascending: true });
 
         if (messagesError) throw messagesError;
+
+        const actualMessageCount = chatMessages?.length || 0;
+        const recordedMessageCount = currentSession.message_count || 0;
+
+        // Validate and fix state mismatch: if message_count doesn't match actual messages
+        if (actualMessageCount !== recordedMessageCount) {
+          console.warn(
+            `Session ${currentSession.id} has state mismatch: ` +
+            `recorded ${recordedMessageCount} messages but found ${actualMessageCount} in database. ` +
+            `Fixing by updating message_count to match actual count.`
+          );
+
+          // Fix the mismatch by updating the session's message_count to match reality
+          const { error: fixError } = await supabase
+            .from('interview_sessions')
+            .update({ 
+              message_count: actualMessageCount,
+              flagged_for_review: actualMessageCount >= 100
+            })
+            .eq('id', currentSession.id);
+
+          if (fixError) {
+            console.error('Failed to fix message count mismatch:', fixError);
+          } else {
+            // Update the session object with corrected count
+            currentSession.message_count = actualMessageCount;
+            currentSession.flagged_for_review = actualMessageCount >= 100;
+          }
+        }
+
+        setSession(currentSession);
 
         if (chatMessages && chatMessages.length > 0) {
           setMessages(chatMessages.map(m => ({
@@ -204,8 +233,6 @@ export function useCategoryOfOneChat({
       if (sessionError) throw sessionError;
       if (!existingSession) throw new Error('Session not found');
 
-      setSession(existingSession);
-
       // Load messages
       const { data: chatMessages, error: messagesError } = await supabase
         .from('chat_messages')
@@ -215,7 +242,38 @@ export function useCategoryOfOneChat({
 
       if (messagesError) throw messagesError;
 
-      if (chatMessages) {
+      const actualMessageCount = chatMessages?.length || 0;
+      const recordedMessageCount = existingSession.message_count || 0;
+
+      // Validate and fix state mismatch: if message_count doesn't match actual messages
+      if (actualMessageCount !== recordedMessageCount) {
+        console.warn(
+          `Session ${sessionId} has state mismatch: ` +
+          `recorded ${recordedMessageCount} messages but found ${actualMessageCount} in database. ` +
+          `Fixing by updating message_count to match actual count.`
+        );
+
+        // Fix the mismatch by updating the session's message_count to match reality
+        const { error: fixError } = await supabase
+          .from('interview_sessions')
+          .update({ 
+            message_count: actualMessageCount,
+            flagged_for_review: actualMessageCount >= 100
+          })
+          .eq('id', sessionId);
+
+        if (fixError) {
+          console.error('Failed to fix message count mismatch:', fixError);
+        } else {
+          // Update the session object with corrected count
+          existingSession.message_count = actualMessageCount;
+          existingSession.flagged_for_review = actualMessageCount >= 100;
+        }
+      }
+
+      setSession(existingSession);
+
+      if (chatMessages && chatMessages.length > 0) {
         setMessages(chatMessages.map(m => ({
           id: m.id,
           role: m.role,
@@ -249,6 +307,10 @@ export function useCategoryOfOneChat({
 
     setIsStreaming(true);
 
+    const assistantMessageId = crypto.randomUUID();
+    let fullContent = '';
+    let messageSaved = false;
+
     try {
       const { supabaseUrl, headers } = await getAuthHeaders();
 
@@ -263,14 +325,11 @@ export function useCategoryOfOneChat({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start conversation');
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Failed to start conversation: ${errorText}`);
       }
 
-      // Handle streaming response
-      const assistantMessageId = crypto.randomUUID();
-      let fullContent = '';
-
-      // Add empty assistant message that will be updated
+      // Add empty assistant message that will be updated during streaming
       setMessages([{
         id: assistantMessageId,
         role: 'assistant',
@@ -278,37 +337,44 @@ export function useCategoryOfOneChat({
         isStreaming: true,
       }]);
 
+      // Handle streaming response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
 
       if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n').filter(line => line.trim() !== '');
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') continue;
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
 
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  fullContent += parsed.content;
-                  setMessages(prev => prev.map(m => 
-                    m.id === assistantMessageId 
-                      ? { ...m, content: fullContent }
-                      : m
-                  ));
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.content) {
+                    fullContent += parsed.content;
+                    setMessages(prev => prev.map(m => 
+                      m.id === assistantMessageId 
+                        ? { ...m, content: fullContent }
+                        : m
+                    ));
+                  }
+                } catch {
+                  // Skip malformed JSON
                 }
-              } catch {
-                // Skip malformed JSON
               }
             }
           }
+        } catch (streamErr) {
+          throw streamErr instanceof Error ? streamErr : new Error('Streaming error');
+        } finally {
+          reader.releaseLock();
         }
       }
 
@@ -319,17 +385,34 @@ export function useCategoryOfOneChat({
           : m
       ));
 
-      // Save assistant message to database
-      await supabase.from('chat_messages').insert({
+      // CRITICAL: Save assistant message to database
+      // For initial greeting, we don't update message_count since it's just the greeting
+      const { error: saveError } = await supabase.from('chat_messages').insert({
         session_id: sessionId,
         role: 'assistant',
         content: fullContent,
       });
 
+      if (saveError) {
+        throw new Error(`Failed to save greeting message: ${saveError.message}`);
+      }
+      messageSaved = true;
+
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start conversation');
+      // Cleanup: Remove incomplete message from UI if it wasn't saved
+      if (!messageSaved) {
+        setMessages(prev => prev.filter(m => m.id !== assistantMessageId));
+      }
+
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Failed to start conversation';
+      setError(errorMessage);
+      console.error('Error in startNewConversation:', err);
     } finally {
+      // Always reset streaming state, even on errors
       setIsStreaming(false);
+      streamingStartedAtRef.current = null;
     }
   };
 
@@ -340,6 +423,12 @@ export function useCategoryOfOneChat({
     setError(null);
     setIsStreaming(true);
 
+    const userMessageId = crypto.randomUUID();
+    const assistantMessageId = crypto.randomUUID();
+    let userMessageSaved = false;
+    let assistantMessageSaved = false;
+    let fullContent = '';
+
     try {
       // Cancel any existing request
       if (abortControllerRef.current) {
@@ -347,8 +436,7 @@ export function useCategoryOfOneChat({
       }
       abortControllerRef.current = new AbortController();
 
-      // Add user message immediately
-      const userMessageId = crypto.randomUUID();
+      // Add user message immediately to UI
       const userMessage: LocalChatMessage = {
         id: userMessageId,
         role: 'user',
@@ -357,12 +445,17 @@ export function useCategoryOfOneChat({
 
       setMessages(prev => [...prev, userMessage]);
 
-      // Save user message to database
-      await supabase.from('chat_messages').insert({
+      // Save user message to database FIRST
+      const { error: userSaveError } = await supabase.from('chat_messages').insert({
         session_id: session.id,
         role: 'user',
         content,
       });
+
+      if (userSaveError) {
+        throw new Error(`Failed to save user message: ${userSaveError.message}`);
+      }
+      userMessageSaved = true;
 
       // Build messages for API (including the new user message)
       const apiMessages = [...messages, userMessage].map(m => ({
@@ -384,14 +477,11 @@ export function useCategoryOfOneChat({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Failed to send message: ${errorText}`);
       }
 
-      // Handle streaming response
-      const assistantMessageId = crypto.randomUUID();
-      let fullContent = '';
-
-      // Add empty assistant message that will be updated
+      // Add empty assistant message that will be updated during streaming
       setMessages(prev => [...prev, {
         id: assistantMessageId,
         role: 'assistant',
@@ -399,37 +489,46 @@ export function useCategoryOfOneChat({
         isStreaming: true,
       }]);
 
+      // Handle streaming response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
+      let streamError: Error | null = null;
 
       if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n').filter(line => line.trim() !== '');
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') continue;
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
 
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  fullContent += parsed.content;
-                  setMessages(prev => prev.map(m => 
-                    m.id === assistantMessageId 
-                      ? { ...m, content: fullContent }
-                      : m
-                  ));
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.content) {
+                    fullContent += parsed.content;
+                    setMessages(prev => prev.map(m => 
+                      m.id === assistantMessageId 
+                        ? { ...m, content: fullContent }
+                        : m
+                    ));
+                  }
+                } catch {
+                  // Skip malformed JSON
                 }
-              } catch {
-                // Skip malformed JSON
               }
             }
           }
+        } catch (streamErr) {
+          streamError = streamErr instanceof Error ? streamErr : new Error('Streaming error');
+          throw streamError;
+        } finally {
+          reader.releaseLock();
         }
       }
 
@@ -440,22 +539,33 @@ export function useCategoryOfOneChat({
           : m
       ));
 
-      // Save assistant message to database
-      await supabase.from('chat_messages').insert({
+      // CRITICAL: Save assistant message to database BEFORE updating message_count
+      // This ensures data consistency - if save fails, count won't be incremented
+      const { error: assistantSaveError } = await supabase.from('chat_messages').insert({
         session_id: session.id,
         role: 'assistant',
         content: fullContent,
       });
 
-      // Update message count
+      if (assistantSaveError) {
+        throw new Error(`Failed to save assistant message: ${assistantSaveError.message}`);
+      }
+      assistantMessageSaved = true;
+
+      // Only update message count if BOTH messages were successfully saved
       const newMessageCount = (session.message_count || 0) + 2; // user + assistant
-      await supabase
+      const { error: countUpdateError } = await supabase
         .from('interview_sessions')
         .update({ 
           message_count: newMessageCount,
           flagged_for_review: newMessageCount >= 100 
         })
         .eq('id', session.id);
+
+      if (countUpdateError) {
+        console.error('Failed to update message count:', countUpdateError);
+        // Don't throw - message count is less critical than message content
+      }
 
       // Update local session state
       setSession(prev => prev ? { 
@@ -482,12 +592,38 @@ export function useCategoryOfOneChat({
       }
 
     } catch (err) {
+      // Handle abort errors gracefully
       if (err instanceof Error && err.name === 'AbortError') {
+        // Remove incomplete messages from UI
+        setMessages(prev => prev.filter(m => 
+          m.id !== userMessageId && m.id !== assistantMessageId
+        ));
         return;
       }
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+
+      // Cleanup: Remove incomplete messages from UI if they weren't saved
+      setMessages(prev => {
+        let updated = prev;
+        if (!userMessageSaved) {
+          updated = updated.filter(m => m.id !== userMessageId);
+        }
+        if (!assistantMessageSaved) {
+          updated = updated.filter(m => m.id !== assistantMessageId);
+        }
+        return updated;
+      });
+
+      // Set error message
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Failed to send message';
+      setError(errorMessage);
+      
+      console.error('Error in sendMessage:', err);
     } finally {
+      // Always reset streaming state, even on errors
       setIsStreaming(false);
+      streamingStartedAtRef.current = null;
     }
   }, [session, messages, clientName, isStreaming]);
 
