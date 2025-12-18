@@ -31,17 +31,48 @@ export function AdminInvites() {
     setSending(true);
     setError(null);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Client-side duplicate protection: check existing invites
+    const existingInvite = invites.find(
+      (invite) => invite.email.toLowerCase() === normalizedEmail
+    );
+
+    if (existingInvite) {
+      setError(
+        existingInvite.accepted_at
+          ? 'This email is already an admin.'
+          : 'This email has already been invited.'
+      );
+      setSending(false);
+      return;
+    }
+
     try {
       // Create invite record
       const { error: createError } = await supabase
         .from('admin_invites')
-        .insert({ email });
+        .insert({ email: normalizedEmail });
 
-      if (createError) throw createError;
+      if (createError) {
+        // Handle unique constraint violation from admin_invites_email_lower_key
+        const code = (createError as any).code as string | undefined;
+        const message = (createError as any).message as string | undefined;
+
+        if (
+          code === '23505' ||
+          (message &&
+            message.toLowerCase().includes('admin_invites_email_lower_key'))
+        ) {
+          throw new Error('This email has already been invited or is an admin.');
+        }
+
+        throw createError;
+      }
 
       // Send magic link
       const { error: authError } = await supabase.auth.signInWithOtp({
-        email,
+        email: normalizedEmail,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },

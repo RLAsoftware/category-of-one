@@ -21,28 +21,61 @@ export function ClientForm({ onBack, onSuccess }: ClientFormProps) {
     setLoading(true);
     setError(null);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       // Generate invite token
       const inviteToken = crypto.randomUUID();
+
+      // Optional client-side duplicate check for clearer UX
+      const { data: existingClient, error: existingError } = await supabase
+        .from('clients')
+        .select('id, email')
+        .ilike('email', normalizedEmail)
+        .maybeSingle();
+
+      if (existingError && existingError.code !== 'PGRST116') {
+        console.error('Error checking existing client:', existingError);
+      }
+
+      if (existingClient) {
+        setError('A client with this email already exists.');
+        setLoading(false);
+        return;
+      }
 
       // Create client record
       const { data: client, error: createError } = await supabase
         .from('clients')
         .insert({
           name,
-          email,
+          email: normalizedEmail,
           company: company || null,
           invite_token: inviteToken,
         })
         .select()
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        const code = (createError as any).code as string | undefined;
+        const message = (createError as any).message as string | undefined;
+
+        if (
+          code === '23505' ||
+          (message &&
+            (message.toLowerCase().includes('clients_email_lower_key') ||
+              message.toLowerCase().includes('clients_user_id_unique')))
+        ) {
+          throw new Error('A client with this email already exists.');
+        }
+
+        throw createError;
+      }
 
       if (sendInvite) {
         // Send magic link to client's email
         const { error: inviteError } = await supabase.auth.signInWithOtp({
-          email,
+          email: normalizedEmail,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: {
