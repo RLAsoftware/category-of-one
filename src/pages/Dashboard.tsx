@@ -11,7 +11,7 @@ import { ProfileCard } from '../components/Dashboard/ProfileCard';
 import { DeleteSessionModal } from '../components/Dashboard/DeleteSessionModal';
 import { EmptyState } from '../components/Dashboard/EmptyState';
 import { ToastContainer } from '../components/ui/Toast';
-import { LogOut, Loader2, MessageSquare, Plus } from 'lucide-react';
+import { LogOut, Loader2, MessageSquare, Plus, ArrowLeft } from 'lucide-react';
 import type { Client } from '../lib/types';
 
 export function Dashboard() {
@@ -155,6 +155,20 @@ export function Dashboard() {
           </div>
 
           <div className="flex items-center gap-3">
+            {isImpersonating && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  stopImpersonation();
+                  navigate('/admin');
+                }}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Admin
+              </Button>
+            )}
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-xs text-slate/70">Welcome back</span>
               <span className="text-sm font-medium text-ink">{client.name}</span>

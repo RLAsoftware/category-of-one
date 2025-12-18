@@ -151,7 +151,7 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl font-semibold leading-tight">{client.name}</h1>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate">
+              <div className="flex flex-col flex-nowrap gap-[7px] text-sm text-slate mb-[10px]">
                 <span className="flex items-center gap-1">
                   <Mail className="w-4 h-4" />
                   {client.email}
@@ -167,14 +167,35 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
                   {new Date(client.created_at).toLocaleDateString()}
                 </span>
               </div>
+              {/* Status Badge (moved inside header card) */}
+              <div>
+                {client.user_id ? (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span className="text-success font-medium">Account Active</span>
+                  </div>
+                ) : client.invite_sent_at ? (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-terracotta/10">
+                    <Clock className="w-5 h-5 text-terracotta" />
+                    <span className="text-terracotta font-medium">
+                      Invite sent {new Date(client.invite_sent_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate/10">
+                    <Clock className="w-5 h-5 text-slate" />
+                    <span className="text-slate font-medium">Pending invite</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Right: Actions */}
-          <div className="flex flex-wrap items-center gap-3 justify-start md:justify-end">
+          <div className="flex flex-col gap-3 w-full md:w-60 md:items-stretch">
             <Button
-              variant="secondary"
-              className="border-sunset/40 text-sunset hover:bg-sunset/5"
+              variant="primary"
+              className="w-full justify-center"
               onClick={() => {
                 startImpersonation(client);
                 navigate('/dashboard');
@@ -186,7 +207,7 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
               onClick={handleSendInvite}
               loading={sendingInvite}
               disabled={client.user_id !== null}
-              className="bg-sunset/10 text-sunset hover:bg-sunset/20"
+              className="w-full bg-sunset/10 text-sunset hover:bg-sunset/20 justify-center disabled:opacity-50"
             >
               <Send className="w-4 h-4 mr-2" />
               Resend Invite
@@ -195,7 +216,7 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
               onClick={handleDeleteClient}
               loading={deleting}
               variant="secondary"
-              className="border-error/60 text-error hover:bg-error/5"
+              className="w-full border-error/60 text-error hover:bg-error/5 justify-center"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Client
@@ -203,28 +224,6 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
           </div>
         </div>
       </Card>
-
-      {/* Status Badge */}
-      <div className="mb-6">
-        {client.user_id ? (
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10">
-            <CheckCircle className="w-5 h-5 text-success" />
-            <span className="text-success font-medium">Account Active</span>
-          </div>
-        ) : client.invite_sent_at ? (
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-terracotta/10">
-            <Clock className="w-5 h-5 text-terracotta" />
-            <span className="text-terracotta font-medium">
-              Invite sent {new Date(client.invite_sent_at).toLocaleDateString()}
-            </span>
-          </div>
-        ) : (
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate/10">
-            <Clock className="w-5 h-5 text-slate" />
-            <span className="text-slate font-medium">Pending invite</span>
-          </div>
-        )}
-      </div>
 
       {/* Two-Column Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
