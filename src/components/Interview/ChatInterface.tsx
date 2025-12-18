@@ -42,22 +42,6 @@ export function ChatInterface({
   const hasStreamingMessage = messages.some((m) => (m as any).isStreaming);
   const isActuallyStreaming = isStreaming && hasStreamingMessage;
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/a604c763-55bb-413d-8173-49062a81e738', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sessionId: 'debug-session',
-      runId: 'pre-fix-1',
-      hypothesisId: 'E',
-      location: 'src/components/Interview/ChatInterface.tsx:component',
-      message: 'ChatInterface render',
-      data: { messagesLength: messages.length, isStreaming, isSynthesizing, sessionStatus },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion agent log
-
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -17,22 +17,6 @@ export function Interview() {
   const [clientLoading, setClientLoading] = useState(true);
   const [showStartFromScratchModal, setShowStartFromScratchModal] = useState(false);
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/a604c763-55bb-413d-8173-49062a81e738', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sessionId: 'debug-session',
-      runId: 'pre-fix-1',
-      hypothesisId: 'A',
-      location: 'src/pages/Interview.tsx:component',
-      message: 'Interview render start',
-      data: { hasUser: !!user, sessionIdFromRoute: sessionId },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion agent log
-
   useEffect(() => {
     // If session timed out, redirect to login
     if (sessionTimedOut) {
@@ -46,21 +30,6 @@ export function Interview() {
     }
 
     if (user) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a604c763-55bb-413d-8173-49062a81e738', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: 'debug-session',
-          runId: 'pre-fix-1',
-          hypothesisId: 'A',
-          location: 'src/pages/Interview.tsx:useEffect-auth',
-          message: 'Calling loadClient after auth check',
-          data: { userId: user.id },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion agent log
       loadClient();
     }
   }, [user, authLoading, sessionTimedOut, navigate]);
@@ -99,22 +68,6 @@ export function Interview() {
   // Initialize or load chat when client is loaded
   useEffect(() => {
     if (client && !session) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a604c763-55bb-413d-8173-49062a81e738', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: 'debug-session',
-          runId: 'pre-fix-1',
-          hypothesisId: 'B',
-          location: 'src/pages/Interview.tsx:useEffect-init',
-          message: 'Choosing chat initialization path',
-          data: { hasClient: !!client, hasSession: !!session, hasSessionIdParam: !!sessionId },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion agent log
-
       if (sessionId) {
         // Load existing session
         loadSession(sessionId);
