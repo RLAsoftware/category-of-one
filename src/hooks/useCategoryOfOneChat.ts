@@ -29,7 +29,7 @@ interface UseCategoryOfOneChatReturn {
   sendMessage: (content: string) => Promise<void>;
   synthesizeProfile: () => Promise<void>;
   resetChat: () => Promise<void>;
-  exportProfileAsMarkdown: () => void;
+  exportProfileAsPdf: () => void;
   exportBusinessProfile: () => void;
   exportCategoryOfOneDoc: () => void;
 }
@@ -652,20 +652,21 @@ export function useCategoryOfOneChat({
   }, [session, clientName]);
 
   // Export full profile as a formatted PDF (client-facing profile page)
-  const exportProfileAsPdf = useCallback(async () => {
+  const exportProfileAsPdf = useCallback(() => {
     if (!profile?.raw_profile) return;
 
-    const doc = await PDFDocument.create();
-    const page = doc.addPage();
-    const { width, height } = page.getSize();
-    const font = await doc.embedFont(StandardFonts.Helvetica);
-    const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+    (async () => {
+      const doc = await PDFDocument.create();
+      const page = doc.addPage();
+      const { width, height } = page.getSize();
+      const font = await doc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
     const fontSize = 11;
     const lineHeight = fontSize * 1.4;
     const margin = 50;
     let y = height - margin;
 
-    const addWrappedText = (text: string, options: { bold?: boolean } = {}) => {
+      const addWrappedText = (text: string, options: { bold?: boolean } = {}) => {
       const usedFont = options.bold ? fontBold : font;
       const maxWidth = width - margin * 2;
       const words = text.split(' ');
@@ -679,9 +680,10 @@ export function useCategoryOfOneChat({
             // New page
             const newPage = doc.addPage();
             y = newPage.getSize().height - margin;
-            page.drawText('', { x: margin, y }); // no-op to keep type happy
+            newPage.drawText('', { x: margin, y }); // no-op
           }
-          page.drawText(line, { x: margin, y, size: fontSize, font: usedFont });
+          const targetPage = doc.getPages()[doc.getPageCount() - 1];
+          targetPage.drawText(line, { x: margin, y, size: fontSize, font: usedFont });
           y -= lineHeight;
           line = word;
         } else {
@@ -693,41 +695,44 @@ export function useCategoryOfOneChat({
         if (y < margin + lineHeight) {
           const newPage = doc.addPage();
           y = newPage.getSize().height - margin;
-          page.drawText('', { x: margin, y });
+          newPage.drawText('', { x: margin, y });
         }
-        page.drawText(line, { x: margin, y, size: fontSize, font: usedFont });
+        const targetPage = doc.getPages()[doc.getPageCount() - 1];
+        targetPage.drawText(line, { x: margin, y, size: fontSize, font: usedFont });
         y -= lineHeight;
       }
-    };
+      };
 
-    // Simple title
-    addWrappedText(`Category of One Profile: ${clientName}`, { bold: true });
-    y -= lineHeight / 2;
+      // Simple title
+      addWrappedText(`Category of One Profile: ${clientName}`, { bold: true });
+      y -= lineHeight / 2;
 
-    const lines = profile.raw_profile.split('\n');
-    for (const rawLine of lines) {
-      const line = rawLine.trimEnd();
-      if (!line) {
-        y -= lineHeight / 2;
-        continue;
+      const raw = profile.raw_profile ?? '';
+      const lines = raw.split('\n');
+      for (const rawLine of lines) {
+        const line = rawLine.trimEnd();
+        if (!line) {
+          y -= lineHeight / 2;
+          continue;
+        }
+
+        // Treat markdown headings as bold
+        const isHeading = line.startsWith('#');
+        const clean = isHeading ? line.replace(/^#+\s*/, '') : line;
+        addWrappedText(clean, { bold: isHeading });
       }
 
-      // Treat markdown headings as bold
-      const isHeading = line.startsWith('#');
-      const clean = isHeading ? line.replace(/^#+\s*/, '') : line;
-      addWrappedText(clean, { bold: isHeading });
-    }
-
-    const pdfBytes = await doc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `category-of-one-full-${clientName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const pdfBytes = await doc.save();
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `category-of-one-full-${clientName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })();
   }, [profile, clientName]);
 
   const exportBusinessProfile = useCallback(() => {
