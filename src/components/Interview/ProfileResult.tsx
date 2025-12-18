@@ -373,10 +373,6 @@ export function ProfileResult({
           <Download className="w-4 h-4" />
           Export full profile
         </Button>
-        <Button onClick={onReset} variant="ghost" className="gap-2">
-          <RefreshCw className="w-4 h-4" />
-          Start Over
-        </Button>
       </div>
     </div>
   );
