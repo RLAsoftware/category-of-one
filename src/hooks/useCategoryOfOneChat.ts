@@ -707,13 +707,17 @@ export function useCategoryOfOneChat({
       const { width, height } = page.getSize();
       const font = await doc.embedFont(StandardFonts.Helvetica);
       const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
-      const fontSize = 11;
-      const lineHeight = fontSize * 1.4;
+      const baseFontSize = 11;
+      const lineHeight = baseFontSize * 1.4;
       const margin = 50;
       let y = height - margin;
 
-      const addWrappedText = (text: string, options: { bold?: boolean } = {}) => {
+      const addWrappedText = (
+        text: string,
+        options: { bold?: boolean; fontSize?: number } = {}
+      ) => {
         const usedFont = options.bold ? fontBold : font;
+        const fontSize = options.fontSize ?? baseFontSize;
         const maxWidth = width - margin * 2;
         const words = text.split(' ');
         let line = '';
@@ -746,14 +750,28 @@ export function useCategoryOfOneChat({
         }
       };
 
-      // Title
-      addWrappedText(`Category of One Profile: ${clientName}`, { bold: true });
-      y -= lineHeight / 2;
+      // Use the profile's own client_name if available, fall back to account name
+      const displayName = profile.client_name || clientName;
+
+      // Title (single source of truth for the name in the PDF)
+      addWrappedText(`Category of One Profile: ${displayName}`, {
+        bold: true,
+        fontSize: 14,
+      });
+      y -= lineHeight;
 
       const raw = profile.raw_profile ?? '';
       const lines = raw.split('\n');
       for (const rawLine of lines) {
         const line = rawLine.trimEnd();
+
+        // Skip any existing markdown title line to avoid duplicate names
+        if (
+          /^#*\s*Category of One Profile:/i.test(line)
+        ) {
+          continue;
+        }
+
         if (!line) {
           y -= lineHeight / 2;
           continue;
@@ -761,7 +779,10 @@ export function useCategoryOfOneChat({
 
         const isHeading = line.startsWith('#');
         const clean = isHeading ? line.replace(/^#+\s*/, '') : line;
-        addWrappedText(clean, { bold: isHeading });
+        addWrappedText(clean, {
+          bold: isHeading,
+          fontSize: isHeading ? 13 : baseFontSize,
+        });
       }
 
       const pdfBytes = await doc.save();
