@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Card, Button, Input } from '../ui';
+import { Card, Button } from '../ui';
 import type { Client, StyleProfile, CategoryOfOneProfile } from '../../lib/types';
 import {
   ArrowLeft,
@@ -17,8 +17,6 @@ import {
   Trash2,
   Users,
   Settings,
-  Key,
-  X,
 } from 'lucide-react';
 
 interface ClientDetailProps {
@@ -34,12 +32,6 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
   const [sendingInvite, setSendingInvite] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [settingPassword, setSettingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   useEffect(() => {
     loadClientData();
@@ -83,63 +75,6 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
     await navigator.clipboard.writeText(profile);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSetPassword = async () => {
-    if (!client.user_id) {
-      setPasswordError('Client must have an account to set a password');
-      return;
-    }
-
-    if (!password || !confirmPassword) {
-      setPasswordError('Please enter both password fields');
-      return;
-    }
-
-    if (password.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
-    }
-
-    setPasswordError(null);
-    setSettingPassword(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('set-client-password', {
-        body: {
-          userId: client.user_id,
-          password: password,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      setPasswordSuccess(true);
-      setPassword('');
-      setConfirmPassword('');
-      
-      setTimeout(() => {
-        setShowPasswordModal(false);
-        setPasswordSuccess(false);
-        setPasswordError(null);
-      }, 2000);
-    } catch (err) {
-      console.error('Error setting password:', err);
-      setPasswordError(err instanceof Error ? err.message : 'Failed to set password. Please try again.');
-    } finally {
-      setSettingPassword(false);
-    }
   };
 
   const handleDeleteClient = async () => {
@@ -231,19 +166,6 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
           </div>
           
           <div className="flex items-center gap-3">
-            {client.user_id && (
-              <Button
-                onClick={() => {
-                  setShowPasswordModal(true);
-                  setPasswordError(null);
-                  setPasswordSuccess(false);
-                }}
-                variant="secondary"
-              >
-                <Key className="w-4 h-4 mr-2" />
-                Set Password
-              </Button>
-            )}
             <Button
               onClick={handleSendInvite}
               loading={sendingInvite}
@@ -420,96 +342,6 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
           )}
         </Card>
       </div>
-
-      {/* Set Password Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card variant="elevated" className="w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Set Password for {client.name}</h2>
-              <button
-                onClick={() => {
-                  setShowPasswordModal(false);
-                  setPassword('');
-                  setConfirmPassword('');
-                  setPasswordError(null);
-                  setPasswordSuccess(false);
-                }}
-                className="text-slate hover:text-ink transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {passwordSuccess ? (
-              <div className="text-center py-4">
-                <CheckCircle className="w-12 h-12 text-success mx-auto mb-2" />
-                <p className="text-success font-medium">Password updated successfully!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate mb-1">
-                    New Password
-                  </label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter new password (min 8 characters)"
-                    disabled={settingPassword}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate mb-1">
-                    Confirm Password
-                  </label>
-                  <Input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    disabled={settingPassword}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !settingPassword) {
-                        handleSetPassword();
-                      }
-                    }}
-                  />
-                </div>
-                {passwordError && (
-                  <div className="bg-error/10 border border-error/20 text-error rounded-lg px-4 py-3 text-sm">
-                    {passwordError}
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <Button
-                    onClick={handleSetPassword}
-                    loading={settingPassword}
-                    disabled={!password || !confirmPassword}
-                    className="flex-1"
-                  >
-                    <Key className="w-4 h-4 mr-2" />
-                    Set Password
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowPasswordModal(false);
-                      setPassword('');
-                      setConfirmPassword('');
-                      setPasswordError(null);
-                    }}
-                    variant="secondary"
-                    disabled={settingPassword}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
