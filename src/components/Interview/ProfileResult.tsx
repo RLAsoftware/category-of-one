@@ -18,6 +18,22 @@ export function ProfileResult({
 }: ProfileResultProps) {
   const navigate = useNavigate();
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/a604c763-55bb-413d-8173-49062a81e738', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'pre-fix-1',
+      hypothesisId: 'F',
+      location: 'src/components/Interview/ProfileResult.tsx:component',
+      message: 'ProfileResult render',
+      data: { hasProfile: !!profile },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion agent log
+
   // Handle both old and new schema
   const positioningText = typeof profile.positioning_statement === 'string' 
     ? profile.positioning_statement 

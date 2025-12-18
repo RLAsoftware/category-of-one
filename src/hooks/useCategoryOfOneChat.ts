@@ -47,6 +47,22 @@ export function useCategoryOfOneChat({
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamingStartedAtRef = useRef<number | null>(null);
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/a604c763-55bb-413d-8173-49062a81e738', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'pre-fix-1',
+      hypothesisId: 'B',
+      location: 'src/hooks/useCategoryOfOneChat.ts:hook-entry',
+      message: 'useCategoryOfOneChat init',
+      data: { clientId, clientName },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion agent log
+
   // Helper to build authenticated headers for Edge Functions
   const getAuthHeaders = useCallback(async () => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -75,6 +91,21 @@ export function useCategoryOfOneChat({
     setError(null);
 
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/a604c763-55bb-413d-8173-49062a81e738', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: 'debug-session',
+          runId: 'pre-fix-1',
+          hypothesisId: 'C',
+          location: 'src/hooks/useCategoryOfOneChat.ts:initializeChat',
+          message: 'initializeChat start',
+          data: { clientId },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion agent log
       // Check for existing IN-PROGRESS session (exclude completed)
       const { data: existingSession, error: sessionError } = await supabase
         .from('interview_sessions')
@@ -190,6 +221,21 @@ export function useCategoryOfOneChat({
     setError(null);
 
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/a604c763-55bb-413d-8173-49062a81e738', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: 'debug-session',
+          runId: 'pre-fix-1',
+          hypothesisId: 'D',
+          location: 'src/hooks/useCategoryOfOneChat.ts:loadSession',
+          message: 'loadSession start',
+          data: { sessionId },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion agent log
       // Fetch the session
       const { data: existingSession, error: sessionError } = await supabase
         .from('interview_sessions')
