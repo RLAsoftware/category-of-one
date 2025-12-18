@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { supabase } from '../lib/supabase';
 import type { 
   LocalChatMessage, 
@@ -696,19 +697,84 @@ export function useCategoryOfOneChat({
     }
   }, [session, clientName]);
 
-  // Export profile as markdown file (full Category of One profile)
+  // Export full profile as a formatted PDF (used on client-facing profile page)
   const exportProfileAsMarkdown = useCallback(() => {
     if (!profile?.raw_profile) return;
 
-    const blob = new Blob([profile.raw_profile], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `category-of-one-full-${clientName.toLowerCase().replace(/\s+/g, '-')}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    (async () => {
+      const doc = await PDFDocument.create();
+      const page = doc.addPage();
+      const { width, height } = page.getSize();
+      const font = await doc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+      const fontSize = 11;
+      const lineHeight = fontSize * 1.4;
+      const margin = 50;
+      let y = height - margin;
+
+      const addWrappedText = (text: string, options: { bold?: boolean } = {}) => {
+        const usedFont = options.bold ? fontBold : font;
+        const maxWidth = width - margin * 2;
+        const words = text.split(' ');
+        let line = '';
+
+        for (const word of words) {
+          const testLine = line ? `${line} ${word}` : word;
+          const textWidth = usedFont.widthOfTextAtSize(testLine, fontSize);
+          if (textWidth > maxWidth) {
+            if (y < margin + lineHeight) {
+              const newPage = doc.addPage();
+              y = newPage.getSize().height - margin;
+            }
+            const targetPage = doc.getPages()[doc.getPageCount() - 1];
+            targetPage.drawText(line, { x: margin, y, size: fontSize, font: usedFont });
+            y -= lineHeight;
+            line = word;
+          } else {
+            line = testLine;
+          }
+        }
+
+        if (line) {
+          if (y < margin + lineHeight) {
+            const newPage = doc.addPage();
+            y = newPage.getSize().height - margin;
+          }
+          const targetPage = doc.getPages()[doc.getPageCount() - 1];
+          targetPage.drawText(line, { x: margin, y, size: fontSize, font: usedFont });
+          y -= lineHeight;
+        }
+      };
+
+      // Title
+      addWrappedText(`Category of One Profile: ${clientName}`, { bold: true });
+      y -= lineHeight / 2;
+
+      const raw = profile.raw_profile ?? '';
+      const lines = raw.split('\n');
+      for (const rawLine of lines) {
+        const line = rawLine.trimEnd();
+        if (!line) {
+          y -= lineHeight / 2;
+          continue;
+        }
+
+        const isHeading = line.startsWith('#');
+        const clean = isHeading ? line.replace(/^#+\s*/, '') : line;
+        addWrappedText(clean, { bold: isHeading });
+      }
+
+      const pdfBytes = await doc.save();
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `category-of-one-full-${clientName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })();
   }, [profile, clientName]);
 
   const exportBusinessProfile = useCallback(() => {
