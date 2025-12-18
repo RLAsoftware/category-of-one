@@ -162,7 +162,10 @@ export function useCategoryOfOneChat({
       streamingStartedAtRef.current = Date.now();
     }
 
-    const timeoutMs = 60000; // 60s guardrail
+    // Give the model more time to respond before surfacing an error to the user.
+    // This only counts once streaming has started (not while the user is typing)
+    // and acts as a safety net for truly stuck requests.
+    const timeoutMs = 240000; // 240s (4 minute) guardrail
     const timer = window.setInterval(() => {
       if (!streamingStartedAtRef.current) return;
       const elapsed = Date.now() - streamingStartedAtRef.current;

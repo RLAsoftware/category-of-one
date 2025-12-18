@@ -1,4 +1,5 @@
 import { User, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import type { LocalChatMessage } from '../../lib/types';
 
 interface ChatMessageProps {
@@ -39,16 +40,56 @@ export function ChatMessage({ message }: ChatMessageProps) {
         }`}
       >
         {/* Message content */}
-        <div
-          className={`text-sm leading-relaxed whitespace-pre-wrap ${
-            isUser ? 'text-white font-medium' : 'text-ink'
-          }`}
-        >
-          {displayContent}
-          {message.isStreaming && (
-            <span className="inline-block w-2 h-4 ml-1 bg-current animate-pulse rounded-sm" />
-          )}
-        </div>
+        {isUser ? (
+          <div
+            className="text-sm leading-relaxed whitespace-pre-wrap text-white font-medium"
+          >
+            {displayContent}
+            {message.isStreaming && (
+              <span className="inline-block w-2 h-4 ml-1 bg-current animate-pulse rounded-sm" />
+            )}
+          </div>
+        ) : (
+          <div className="text-sm leading-relaxed text-ink markdown-body">
+            <ReactMarkdown
+              // Disallow raw HTML for safety; we only need markdown formatting
+              skipHtml
+              components={{
+                p: ({ children }) => (
+                  <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-semibold">{children}</strong>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc pl-5 space-y-1 mb-2 last:mb-0">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal pl-5 space-y-1 mb-2 last:mb-0">
+                    {children}
+                  </ol>
+                ),
+                li: ({ children }) => <li className="whitespace-normal">{children}</li>,
+                h1: ({ children }) => (
+                  <h1 className="text-lg font-semibold mb-2">{children}</h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-base font-semibold mb-2 mt-2">{children}</h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-sm font-semibold mb-1 mt-2">{children}</h3>
+                ),
+              }}
+            >
+              {displayContent}
+            </ReactMarkdown>
+            {message.isStreaming && (
+              <span className="inline-block w-2 h-4 ml-1 bg-current animate-pulse rounded-sm" />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

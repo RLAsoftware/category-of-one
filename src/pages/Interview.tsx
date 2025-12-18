@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useImpersonation } from '../hooks/useImpersonation';
 import { useCategoryOfOneChat } from '../hooks/useCategoryOfOneChat';
 import { getClientByUserId } from '../lib/supabase';
 import { ChatInterface } from '../components/Interview/ChatInterface';
@@ -12,10 +13,11 @@ import type { Client } from '../lib/types';
 export function Interview() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId?: string }>();
-  const { user, loading: authLoading, signOut, sessionTimedOut, sessionExpired, role } = useAuth();
+  const { user, loading: authLoading, signOut, sessionTimedOut, sessionExpired, role, isAdmin } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
   const [showStartFromScratchModal, setShowStartFromScratchModal] = useState(false);
+  const { client: impersonatedClient, isImpersonating, stopImpersonation } = useImpersonation();
 
   useEffect(() => {
     // If session timed out, redirect to login
@@ -32,11 +34,19 @@ export function Interview() {
     if (user) {
       loadClient();
     }
-  }, [user, authLoading, sessionTimedOut, sessionExpired, navigate]);
+  }, [user, authLoading, sessionTimedOut, sessionExpired, navigate, isAdmin, isImpersonating, impersonatedClient]);
 
   const loadClient = async () => {
     if (!user) return;
     setClientLoading(true);
+
+    // If an admin is impersonating a client, use that client directly
+    if (isAdmin && isImpersonating && impersonatedClient) {
+      setClient(impersonatedClient);
+      setClientLoading(false);
+      return;
+    }
+
     const clientData = await getClientByUserId(user.id);
     setClient(clientData);
     setClientLoading(false);
@@ -79,6 +89,9 @@ export function Interview() {
   }, [client, session, sessionId, initializeChat, loadSession]);
 
   const handleSignOut = async () => {
+    if (isImpersonating) {
+      stopImpersonation();
+    }
     await signOut();
     navigate('/login', { replace: true });
   };

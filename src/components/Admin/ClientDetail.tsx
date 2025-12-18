@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Card, Button } from '../ui';
 import type { Client, StyleProfile, CategoryOfOneProfile } from '../../lib/types';
@@ -18,6 +19,7 @@ import {
   Users,
   Settings,
 } from 'lucide-react';
+import { useImpersonation } from '../../hooks/useImpersonation';
 
 interface ClientDetailProps {
   client: Client;
@@ -26,6 +28,8 @@ interface ClientDetailProps {
 }
 
 export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
+  const navigate = useNavigate();
+  const { startImpersonation } = useImpersonation();
   const [profiles, setProfiles] = useState<StyleProfile[]>([]);
   const [categoryProfiles, setCategoryProfiles] = useState<CategoryOfOneProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,6 +170,15 @@ export function ClientDetail({ client, onBack, onDelete }: ClientDetailProps) {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                startImpersonation(client);
+                navigate('/dashboard');
+              }}
+            >
+              View as client
+            </Button>
             <Button
               onClick={handleSendInvite}
               loading={sendingInvite}

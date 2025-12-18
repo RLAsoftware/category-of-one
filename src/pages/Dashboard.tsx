@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useImpersonation } from '../hooks/useImpersonation';
 import { useDashboard } from '../hooks/useDashboard';
 import { useToast } from '../hooks/useToast';
 import { getClientByUserId, restoreSession } from '../lib/supabase';
@@ -15,11 +16,12 @@ import type { Client } from '../lib/types';
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut, sessionTimedOut, sessionExpired } = useAuth();
+  const { user, loading: authLoading, signOut, sessionTimedOut, sessionExpired, isAdmin } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<{ id: string; title: string; date: string } | null>(null);
+  const { client: impersonatedClient, isImpersonating, stopImpersonation } = useImpersonation();
   
   const {
     sessions,
@@ -48,17 +50,29 @@ export function Dashboard() {
     if (user) {
       loadClient();
     }
-  }, [user, authLoading, sessionTimedOut, sessionExpired, navigate]);
+  }, [user, authLoading, sessionTimedOut, sessionExpired, navigate, isAdmin, isImpersonating, impersonatedClient]);
 
   const loadClient = async () => {
     if (!user) return;
     setClientLoading(true);
+
+    // If an admin has chosen to impersonate a client, use that client directly
+    if (isAdmin && isImpersonating && impersonatedClient) {
+      setClient(impersonatedClient);
+      setClientLoading(false);
+      return;
+    }
+
     const clientData = await getClientByUserId(user.id);
     setClient(clientData);
     setClientLoading(false);
   };
 
   const handleSignOut = async () => {
+    // Clear any impersonation state when signing out
+    if (isImpersonating) {
+      stopImpersonation();
+    }
     await signOut();
     navigate('/login', { replace: true });
   };
