@@ -15,7 +15,7 @@ import type { Client } from '../lib/types';
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut, sessionTimedOut } = useAuth();
+  const { user, loading: authLoading, signOut, sessionTimedOut, sessionExpired } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -35,7 +35,7 @@ export function Dashboard() {
 
   useEffect(() => {
     // If session timed out, redirect to login
-    if (sessionTimedOut) {
+    if (sessionTimedOut || sessionExpired) {
       navigate('/login', { replace: true });
       return;
     }
@@ -48,7 +48,7 @@ export function Dashboard() {
     if (user) {
       loadClient();
     }
-  }, [user, authLoading, sessionTimedOut, navigate]);
+  }, [user, authLoading, sessionTimedOut, sessionExpired, navigate]);
 
   const loadClient = async () => {
     if (!user) return;

@@ -12,14 +12,14 @@ import type { Client } from '../lib/types';
 export function Interview() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId?: string }>();
-  const { user, loading: authLoading, signOut, sessionTimedOut, role } = useAuth();
+  const { user, loading: authLoading, signOut, sessionTimedOut, sessionExpired, role } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
   const [showStartFromScratchModal, setShowStartFromScratchModal] = useState(false);
 
   useEffect(() => {
     // If session timed out, redirect to login
-    if (sessionTimedOut) {
+    if (sessionTimedOut || sessionExpired) {
       navigate('/login', { replace: true });
       return;
     }
@@ -32,7 +32,7 @@ export function Interview() {
     if (user) {
       loadClient();
     }
-  }, [user, authLoading, sessionTimedOut, navigate]);
+  }, [user, authLoading, sessionTimedOut, sessionExpired, navigate]);
 
   const loadClient = async () => {
     if (!user) return;

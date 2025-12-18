@@ -16,7 +16,7 @@ type SettingsTab = 'team' | 'llm';
 
 export function Admin() {
   const navigate = useNavigate();
-  const { user, loading, signOut, role, sessionTimedOut } = useAuth();
+  const { user, loading, signOut, role, sessionTimedOut, sessionExpired } = useAuth();
   const [view, setView] = useState<View>('list');
   const [tab, setTab] = useState<Tab>('clients');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -24,7 +24,7 @@ export function Admin() {
 
   useEffect(() => {
     // If session timed out, redirect to login
-    if (sessionTimedOut) {
+    if (sessionTimedOut || sessionExpired) {
       console.log('Admin: Session timed out, redirecting to login');
       navigate('/login', { replace: true });
       return;
@@ -46,7 +46,7 @@ export function Admin() {
       navigate('/interview', { replace: true });
       return;
     }
-  }, [user, loading, role, sessionTimedOut, navigate]);
+  }, [user, loading, role, sessionTimedOut, sessionExpired, navigate]);
 
   const handleSignOut = async () => {
     await signOut();

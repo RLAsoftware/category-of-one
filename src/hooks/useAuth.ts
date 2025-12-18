@@ -10,6 +10,7 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   sessionTimedOut: boolean;
+  sessionExpired: boolean;
 }
 
 const SESSION_INIT_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
@@ -40,6 +41,7 @@ export function useAuth() {
     loading: true,
     error: null,
     sessionTimedOut: false,
+    sessionExpired: false,
   });
   
   const isLoggingIn = useRef(false);
@@ -58,7 +60,32 @@ export function useAuth() {
         } = await withTimeout(supabase.auth.getSession(), SESSION_INIT_TIMEOUT_MS);
 
         if (error) {
-          setState((prev) => ({ ...prev, loading: false, error: error.message, sessionTimedOut: false }));
+          const message = (error as AuthError).message ?? error.message ?? String(error);
+          const isInvalidRefresh =
+            message.toLowerCase().includes('invalid refresh token') ||
+            message.toLowerCase().includes('refresh token not found');
+
+          if (isInvalidRefresh) {
+            console.warn('Auth initialization: invalid refresh token, signing out');
+            await supabase.auth.signOut();
+            setState({
+              user: null,
+              session: null,
+              role: null,
+              loading: false,
+              error: 'Your session expired. Please sign in again.',
+              sessionTimedOut: false,
+              sessionExpired: true,
+            });
+          } else {
+            setState((prev) => ({
+              ...prev,
+              loading: false,
+              error: message,
+              sessionTimedOut: false,
+              sessionExpired: false,
+            }));
+          }
           return;
         }
 
@@ -71,19 +98,47 @@ export function useAuth() {
             loading: false,
             error: null,
             sessionTimedOut: false,
+            sessionExpired: false,
           });
         } else {
-          setState((prev) => ({ ...prev, loading: false, sessionTimedOut: false }));
+          setState((prev) => ({
+            ...prev,
+            loading: false,
+            sessionTimedOut: false,
+            sessionExpired: false,
+          }));
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
-        const isTimeout = err instanceof Error && err.message === 'Session check timed out';
-        setState((prev) => ({
-          ...prev,
-          loading: false,
-          error: isTimeout ? 'Session check timed out. Please sign in again.' : 'Failed to check session, please sign in again.',
-          sessionTimedOut: isTimeout,
-        }));
+        const message = err instanceof Error ? err.message : String(err);
+        const isTimeout = message === 'Session check timed out';
+        const isInvalidRefresh =
+          message.toLowerCase().includes('invalid refresh token') ||
+          message.toLowerCase().includes('refresh token not found');
+
+        if (isInvalidRefresh) {
+          console.warn('Auth initialization catch: invalid refresh token, signing out');
+          await supabase.auth.signOut();
+          setState({
+            user: null,
+            session: null,
+            role: null,
+            loading: false,
+            error: 'Your session expired. Please sign in again.',
+            sessionTimedOut: false,
+            sessionExpired: true,
+          });
+        } else {
+          setState((prev) => ({
+            ...prev,
+            loading: false,
+            error: isTimeout
+              ? 'Session check timed out. Please sign in again.'
+              : 'Failed to check session, please sign in again.',
+            sessionTimedOut: isTimeout,
+            sessionExpired: false,
+          }));
+        }
       }
     };
 
@@ -102,6 +157,7 @@ export function useAuth() {
             loading: false,
             error: null,
             sessionTimedOut: false,
+            sessionExpired: false,
           });
         } else if (event === 'SIGNED_IN' && _session?.user) {
           // Handle sign in events
@@ -113,6 +169,7 @@ export function useAuth() {
             loading: false,
             error: null,
             sessionTimedOut: false,
+            sessionExpired: false,
           });
         }
       }
@@ -192,6 +249,7 @@ export function useAuth() {
         loading: false,
         error: null,
         sessionTimedOut: false,
+        sessionExpired: false,
       });
 
       // Clear flag after state is set
@@ -217,6 +275,7 @@ export function useAuth() {
       loading: false,
       error: null,
       sessionTimedOut: false,
+      sessionExpired: false,
     });
     
     const { error } = await supabase.auth.signOut();
