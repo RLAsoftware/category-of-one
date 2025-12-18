@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { 
   LocalChatMessage, 
@@ -45,6 +45,7 @@ export function useCategoryOfOneChat({
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const streamingStartedAtRef = useRef<number | null>(null);
 
   // Helper to build authenticated headers for Edge Functions
   const getAuthHeaders = useCallback(async () => {
@@ -148,6 +149,41 @@ export function useCategoryOfOneChat({
     }
   }, [clientId]);
 
+  // Safety watchdog: prevent the UI from getting stuck in a permanent "streaming" state
+  useEffect(() => {
+    if (!isStreaming) {
+      streamingStartedAtRef.current = null;
+      return;
+    }
+
+    // Record when streaming started if not already set
+    if (!streamingStartedAtRef.current) {
+      streamingStartedAtRef.current = Date.now();
+    }
+
+    const timeoutMs = 60000; // 60s guardrail
+    const timer = window.setInterval(() => {
+      if (!streamingStartedAtRef.current) return;
+      const elapsed = Date.now() - streamingStartedAtRef.current;
+      if (elapsed > timeoutMs) {
+        // Abort any in-flight request
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        setIsStreaming(false);
+        streamingStartedAtRef.current = null;
+        setError(prev =>
+          prev ??
+          'This response is taking longer than expected. Please try again or rephrase your last message.'
+        );
+      }
+    }, 3000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [isStreaming]);
+
   // Load an existing session by ID
   const loadSession = useCallback(async (sessionId: string) => {
     setIsLoading(true);
@@ -204,8 +240,11 @@ export function useCategoryOfOneChat({
 
   // Start a new conversation with AI greeting
   const startNewConversation = async (sessionId: string) => {
+    // Prevent overlapping streams
+    if (isStreaming) return;
+
     setIsStreaming(true);
-    
+
     try {
       const { supabaseUrl, headers } = await getAuthHeaders();
 
@@ -283,6 +322,8 @@ export function useCategoryOfOneChat({
         content: fullContent,
       });
 
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start conversation');
     } finally {
       setIsStreaming(false);
     }
@@ -295,30 +336,30 @@ export function useCategoryOfOneChat({
     setError(null);
     setIsStreaming(true);
 
-    // Cancel any existing request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
-    // Add user message immediately
-    const userMessageId = crypto.randomUUID();
-    const userMessage: LocalChatMessage = {
-      id: userMessageId,
-      role: 'user',
-      content,
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-
-    // Save user message to database
-    await supabase.from('chat_messages').insert({
-      session_id: session.id,
-      role: 'user',
-      content,
-    });
-
     try {
+      // Cancel any existing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
+      // Add user message immediately
+      const userMessageId = crypto.randomUUID();
+      const userMessage: LocalChatMessage = {
+        id: userMessageId,
+        role: 'user',
+        content,
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+
+      // Save user message to database
+      await supabase.from('chat_messages').insert({
+        session_id: session.id,
+        role: 'user',
+        content,
+      });
+
       // Build messages for API (including the new user message)
       const apiMessages = [...messages, userMessage].map(m => ({
         role: m.role,
@@ -420,7 +461,11 @@ export function useCategoryOfOneChat({
       } : null);
 
       // Check if synthesis is ready
-      if (fullContent.includes('[SYNTHESIS_READY]')) {
+      const shouldAutoSynthesize =
+        fullContent.includes('[SYNTHESIS_READY]') ||
+        newMessageCount >= 40; // Failsafe: auto-synthesize after enough turns even if the tag is missing
+
+      if (shouldAutoSynthesize) {
         // Auto-trigger synthesis
         await synthesizeProfileInternal(session.id, [...messages, userMessage, {
           id: assistantMessageId,

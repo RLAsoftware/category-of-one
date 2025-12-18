@@ -128,6 +128,17 @@ export function Interview() {
 
   const isCompleted = session?.status === 'completed' && profile;
 
+  // Ensure we start at the top when the completed profile view becomes active
+  useEffect(() => {
+    if (isCompleted) {
+      // Use a small timeout so this runs after layout/animations
+      const id = window.setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      }, 0);
+      return () => window.clearTimeout(id);
+    }
+  }, [isCompleted]);
+
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       {/* Header */}

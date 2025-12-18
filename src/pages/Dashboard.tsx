@@ -209,9 +209,17 @@ export function Dashboard() {
                     onDelete={(sessionId) => {
                       const session = sessions.find(s => s.id === sessionId);
                       if (session) {
+                        const title =
+                          session.title && session.title.trim()
+                            ? session.title
+                            : new Date(session.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              });
                         handleDeleteClick(
                           sessionId,
-                          session.title || 'Untitled Interview',
+                          title,
                           new Date(session.created_at).toLocaleDateString('en-US', { 
                             month: 'short', 
                             day: 'numeric', 

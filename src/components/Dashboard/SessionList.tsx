@@ -15,6 +15,21 @@ export function SessionList({ sessions, onDelete }: SessionListProps) {
     return null;
   }
 
+  const getSessionTitle = (session: InterviewSession) => {
+    if (session.title && session.title.trim()) {
+      return session.title;
+    }
+
+    const created = new Date(session.created_at);
+    const formattedDate = created.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    return `Interview – ${formattedDate}`;
+  };
+
   const handleSessionClick = (session: InterviewSession) => {
     if (session.status === 'completed') {
       // View profile
@@ -71,7 +86,7 @@ export function SessionList({ sessions, onDelete }: SessionListProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <h3 className="font-medium text-ink truncate">
-                    {session.title || 'Untitled Interview'}
+                    {getSessionTitle(session)}
                   </h3>
                   <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
                     isCompleted

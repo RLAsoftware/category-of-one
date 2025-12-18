@@ -39,6 +39,8 @@ export function ChatInterface({
 
   const isAdmin = userRole === 'admin';
   const canForceSynthesis = isAdmin && sessionStatus === 'chatting' && messages.length >= 5;
+  const hasStreamingMessage = messages.some((m) => (m as any).isStreaming);
+  const isActuallyStreaming = isStreaming && hasStreamingMessage;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -51,7 +53,7 @@ export function ChatInterface({
   }, []);
 
   const handleSubmit = () => {
-    if (!inputValue.trim() || isStreaming || isSynthesizing) return;
+    if (!inputValue.trim() || isActuallyStreaming || isSynthesizing) return;
     
     onSendMessage(inputValue.trim());
     setInputValue('');
@@ -162,7 +164,7 @@ export function ChatInterface({
         )}
 
           {/* Typing indicator spacer */}
-          {isStreaming && !isSynthesizing && (
+          {isActuallyStreaming && !isSynthesizing && (
             <div className="flex items-center gap-2 text-slate text-xs">
               <div className="flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 shadow-soft-message border border-white/60">
                 <span className="typing-dot" />
@@ -193,11 +195,11 @@ export function ChatInterface({
                       placeholder={
                         isSynthesizing
                           ? 'Creating your profile...'
-                          : isStreaming
+                          : isActuallyStreaming
                           ? 'Waiting for response...'
                           : 'Type your message...'
                       }
-                      disabled={isStreaming || isSynthesizing}
+                      disabled={isActuallyStreaming || isSynthesizing}
                       rows={1}
                       className="w-full resize-none bg-transparent border-none outline-none text-ink placeholder:text-slate/60 text-base leading-relaxed py-2 overflow-hidden"
                       style={{ minHeight: '24px', maxHeight: '200px' }}
@@ -206,10 +208,10 @@ export function ChatInterface({
                     <button
                       type="button"
                       onClick={handleSubmit}
-                      disabled={!inputValue.trim() || isStreaming || isSynthesizing}
+                      disabled={!inputValue.trim() || isActuallyStreaming || isSynthesizing}
                       className="inline-flex items-center justify-center h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-tr from-sunset to-amber-400 text-white shadow-soft-input disabled:opacity-50 disabled:cursor-not-allowed transition-transform duration-150 hover:translate-y-0.5"
                     >
-                      {isStreaming ? (
+                      {isActuallyStreaming ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Send className="w-4 h-4" />
