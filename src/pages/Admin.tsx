@@ -25,7 +25,6 @@ export function Admin() {
   useEffect(() => {
     // If session timed out, redirect to login
     if (sessionTimedOut || sessionExpired) {
-      console.log('Admin: Session timed out, redirecting to login');
       navigate('/login', { replace: true });
       return;
     }
@@ -35,14 +34,12 @@ export function Admin() {
     
     // If no user after loading, redirect to login
     if (!user) {
-      console.log('Admin: No user, redirecting to login');
       navigate('/login', { replace: true });
       return;
     }
     
     // If role is explicitly client or missing, keep them out of admin
     if (role !== 'admin') {
-      console.log('Admin: Non-admin role, redirecting to interview');
       navigate('/interview', { replace: true });
       return;
     }

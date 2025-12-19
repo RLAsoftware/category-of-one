@@ -33,7 +33,6 @@ export function Login() {
 
     // Redirect any authenticated user
     if (user) {
-      console.log('Login redirect:', role);
       if (role === 'admin') {
         navigate('/admin', { replace: true });
       } else if (role === 'client') {
