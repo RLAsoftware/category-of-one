@@ -5,7 +5,7 @@ import { ClientList } from '../components/Admin/ClientList';
 import { ClientForm } from '../components/Admin/ClientForm';
 import { ClientDetail } from '../components/Admin/ClientDetail';
 import { AdminInvites } from '../components/Admin/AdminInvites';
-import { LLMConfigPanel } from '../components/Admin/LLMConfigPanel';
+import { LLMSettingsPanel } from '../components/Admin/LLMSettingsPanel';
 import { Button } from '../components/ui';
 import type { Client } from '../lib/types';
 import { LogOut, Users, Settings, Loader2 } from 'lucide-react';
@@ -184,7 +184,7 @@ export function Admin() {
                 <AdminInvites />
               </div>
             ) : (
-              <LLMConfigPanel role={role} />
+              <LLMSettingsPanel role={role} />
             )}
           </div>
         )}

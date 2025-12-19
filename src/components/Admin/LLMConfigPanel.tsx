@@ -8,6 +8,13 @@ interface LLMConfigPanelProps {
   role: UserRole | null;
 }
 
+/**
+ * Category of One LLM configuration panel
+ *
+ * NOTE: This component is currently hard-wired to the `category_of_one` config row.
+ * In future iterations we can generalize it to accept an interview key, but for the
+ * MVP we intentionally keep the backend contract unchanged.
+ */
 export function LLMConfigPanel({ role }: LLMConfigPanelProps) {
   const [config, setConfig] = useState<LLMConfig | null>(null);
   const [model, setModel] = useState('');
