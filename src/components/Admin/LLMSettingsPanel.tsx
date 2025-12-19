@@ -159,9 +159,10 @@ function ComingSoonPanel({ interviewKey }: ComingSoonPanelProps) {
   );
 }
 
-function getInterviewMeta(interviewKey: InterviewKey): InterviewTabMeta & {
+function getInterviewMeta(interviewKey: InterviewKey): {
   title: string;
   description: string;
+  icon: React.ComponentType<{ className?: string }>;
 } {
   switch (interviewKey) {
     case 'single_source_of_truth':

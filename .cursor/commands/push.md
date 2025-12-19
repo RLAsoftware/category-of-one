@@ -1,1 +1,1 @@
-Push an update to Github
+Push an update to git@github.com:RLAsoftware/category-of-one.git
