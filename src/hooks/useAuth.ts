@@ -278,9 +278,15 @@ export function useAuth() {
       sessionExpired: false,
     });
     
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      setState(prev => ({ ...prev, error: error.message }));
+    try {
+      // Use local scope to ensure the client-side session is fully cleared
+      // without depending on a successful global sign-out (which can 403).
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) {
+        console.warn('Supabase signOut error (ignored):', error.message);
+      }
+    } catch (err) {
+      console.warn('Supabase signOut threw (ignored):', err);
     }
   }, []);
 
