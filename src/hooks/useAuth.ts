@@ -5,6 +5,7 @@ import {
   useRef,
   createContext,
   useContext,
+  createElement,
   type ReactNode,
 } from 'react';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
@@ -338,7 +339,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useProvideAuth();
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return createElement(AuthContext.Provider, { value }, children);
 }
 
 export function useAuth() {
