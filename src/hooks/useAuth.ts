@@ -1,4 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  createContext,
+  useContext,
+  type ReactNode,
+} from 'react';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase, getUserRole, isEmailInvited } from '../lib/supabase';
 import type { UserRole } from '../lib/types';
@@ -33,7 +41,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-export function useAuth() {
+function useProvideAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
     session: null,
@@ -322,4 +330,21 @@ export function useAuth() {
     isAdmin: state.role === 'admin',
     isClient: state.role === 'client',
   };
+}
+
+type AuthContextValue = ReturnType<typeof useProvideAuth>;
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const value = useProvideAuth();
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return ctx;
 }
