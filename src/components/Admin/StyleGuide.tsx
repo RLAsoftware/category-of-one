@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, Button, Input, Textarea } from '../ui';
-import { Toast, ToastContainer } from '../ui/Toast';
+import { ToastContainer } from '../ui/Toast';
 
 const STYLE_GUIDE_VERSION = '1.0.0';
 const LAST_UPDATED = '2024-12-18';
