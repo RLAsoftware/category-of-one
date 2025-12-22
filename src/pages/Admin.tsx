@@ -6,12 +6,13 @@ import { ClientForm } from '../components/Admin/ClientForm';
 import { ClientDetail } from '../components/Admin/ClientDetail';
 import { AdminInvites } from '../components/Admin/AdminInvites';
 import { LLMSettingsPanel } from '../components/Admin/LLMSettingsPanel';
+import { StyleGuide } from '../components/Admin/StyleGuide';
 import { Button } from '../components/ui';
 import type { Client } from '../lib/types';
-import { LogOut, Users, Settings, Loader2 } from 'lucide-react';
+import { LogOut, Users, Settings, Loader2, Palette } from 'lucide-react';
 
 type View = 'list' | 'create' | 'detail';
-type Tab = 'clients' | 'settings';
+type Tab = 'clients' | 'settings' | 'style-guide';
 type SettingsTab = 'team' | 'llm';
 
 export function Admin() {
@@ -124,6 +125,17 @@ export function Admin() {
               <Settings className="w-4 h-4" />
               Settings
             </button>
+            <button
+              onClick={() => setTab('style-guide')}
+              className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${
+                tab === 'style-guide'
+                  ? 'border-sunset text-ink'
+                  : 'border-transparent text-slate hover:text-ink'
+              }`}
+            >
+              <Palette className="w-4 h-4" />
+              Style Guide
+            </button>
           </div>
         </div>
       </nav>
@@ -148,6 +160,8 @@ export function Admin() {
               onDelete={handleClientDeleted}
             />
           ) : null
+        ) : tab === 'style-guide' ? (
+          <StyleGuide />
         ) : (
           <div className="max-w-3xl">
             <h1 className="text-2xl mb-4">Settings</h1>
