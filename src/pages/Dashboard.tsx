@@ -56,16 +56,21 @@ export function Dashboard() {
     if (!user) return;
     setClientLoading(true);
 
-    // If an admin has chosen to impersonate a client, use that client directly
-    if (isAdmin && isImpersonating && impersonatedClient) {
-      setClient(impersonatedClient);
-      setClientLoading(false);
-      return;
-    }
+    try {
+      // If an admin has chosen to impersonate a client, use that client directly
+      if (isAdmin && isImpersonating && impersonatedClient) {
+        setClient(impersonatedClient);
+        return;
+      }
 
-    const clientData = await getClientByUserId(user.id);
-    setClient(clientData);
-    setClientLoading(false);
+      const clientData = await getClientByUserId(user.id);
+      setClient(clientData);
+    } catch (error) {
+      console.error('Failed to load client:', error);
+      setClient(null);
+    } finally {
+      setClientLoading(false);
+    }
   };
 
   const handleSignOut = async () => {
