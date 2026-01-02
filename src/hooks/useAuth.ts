@@ -23,6 +23,7 @@ interface AuthState {
 }
 
 const SESSION_INIT_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -52,9 +53,75 @@ function useProvideAuth() {
     sessionTimedOut: false,
     sessionExpired: false,
   });
-  
+
   const isLoggingIn = useRef(false);
   const initializedRef = useRef(false);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Schedule proactive token refresh before expiry
+  const scheduleTokenRefresh = useCallback((session: Session | null) => {
+    // Clear any existing timer
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+
+    if (!session?.expires_at) return;
+
+    const expiresAt = session.expires_at * 1000; // Convert to milliseconds
+    const now = Date.now();
+    const timeUntilExpiry = expiresAt - now;
+    const refreshIn = timeUntilExpiry - TOKEN_REFRESH_BUFFER_MS;
+
+    // If token expires in less than the buffer, refresh immediately
+    // Otherwise schedule refresh for (expiry - buffer) time
+    if (refreshIn <= 0) {
+      // Token is about to expire or already expired, refresh now
+      supabase.auth.refreshSession().catch((err) => {
+        console.warn('Proactive token refresh failed:', err);
+      });
+    } else {
+      refreshTimerRef.current = setTimeout(async () => {
+        try {
+          const { error } = await supabase.auth.refreshSession();
+          if (error) {
+            console.warn('Scheduled token refresh failed:', error.message);
+          }
+        } catch (err) {
+          console.warn('Scheduled token refresh error:', err);
+        }
+      }, refreshIn);
+    }
+  }, []);
+
+  // Refresh token when tab becomes visible after being hidden
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && state.session) {
+        // Check if token is close to expiring
+        const expiresAt = state.session.expires_at ? state.session.expires_at * 1000 : 0;
+        const now = Date.now();
+        const timeUntilExpiry = expiresAt - now;
+
+        // If less than 10 minutes until expiry, refresh proactively
+        if (timeUntilExpiry < 10 * 60 * 1000) {
+          try {
+            const { error } = await supabase.auth.refreshSession();
+            if (error) {
+              console.warn('Visibility refresh failed:', error.message);
+            }
+          } catch (err) {
+            console.warn('Visibility refresh error:', err);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [state.session]);
 
   useEffect(() => {
     // Prevent double initialization in React Strict Mode
@@ -109,6 +176,8 @@ function useProvideAuth() {
             sessionTimedOut: false,
             sessionExpired: false,
           });
+          // Schedule proactive token refresh
+          scheduleTokenRefresh(session);
         } else {
           setState((prev) => ({
             ...prev,
@@ -159,6 +228,11 @@ function useProvideAuth() {
         if (isLoggingIn.current) return;
 
         if (event === 'SIGNED_OUT') {
+          // Clear refresh timer on sign out
+          if (refreshTimerRef.current) {
+            clearTimeout(refreshTimerRef.current);
+            refreshTimerRef.current = null;
+          }
           setState({
             user: null,
             session: null,
@@ -180,14 +254,28 @@ function useProvideAuth() {
             sessionTimedOut: false,
             sessionExpired: false,
           });
+          // Schedule proactive token refresh
+          scheduleTokenRefresh(_session);
+        } else if (event === 'TOKEN_REFRESHED' && _session) {
+          // Update session with new token and reschedule refresh
+          setState((prev) => ({
+            ...prev,
+            session: _session,
+            user: _session.user,
+          }));
+          scheduleTokenRefresh(_session);
         }
       }
     );
 
     return () => {
       subscription.unsubscribe();
+      // Clean up refresh timer on unmount
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
     };
-  }, []);
+  }, [scheduleTokenRefresh]);
 
   const signInWithMagicLink = useCallback(async (email: string) => {
     setState(prev => ({ ...prev, error: null }));

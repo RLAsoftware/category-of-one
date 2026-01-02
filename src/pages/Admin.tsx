@@ -140,10 +140,11 @@ export function Admin() {
         </div>
       </nav>
 
-      {/* Main Content */}
+      {/* Main Content - tabs stay mounted to preserve state */}
       <main className="max-w-6xl mx-auto px-4 py-8">
-        {tab === 'clients' ? (
-          view === 'list' ? (
+        {/* Clients Tab */}
+        <div className={tab === 'clients' ? '' : 'hidden'}>
+          {view === 'list' ? (
             <ClientList
               onCreateClient={() => setView('create')}
               onSelectClient={handleSelectClient}
@@ -159,46 +160,50 @@ export function Admin() {
               onBack={handleBackToList}
               onDelete={handleClientDeleted}
             />
-          ) : null
-        ) : tab === 'style-guide' ? (
-          <StyleGuide />
-        ) : (
-          <div className="max-w-3xl">
-            <h1 className="text-2xl mb-4">Settings</h1>
+          ) : null}
+        </div>
 
-            {/* Settings-level tabs */}
-            <div className="flex gap-4 border-b border-ink/10 mb-6">
-              <button
-                onClick={() => setSettingsTab('team')}
-                className={`py-2 px-1 border-b-2 text-sm transition-colors ${
-                  settingsTab === 'team'
-                    ? 'border-sunset text-ink'
-                    : 'border-transparent text-slate hover:text-ink'
-                }`}
-              >
-                Team
-              </button>
-              <button
-                onClick={() => setSettingsTab('llm')}
-                className={`py-2 px-1 border-b-2 text-sm transition-colors ${
-                  settingsTab === 'llm'
-                    ? 'border-sunset text-ink'
-                    : 'border-transparent text-slate hover:text-ink'
-                }`}
-              >
-                LLM
-              </button>
-            </div>
+        {/* Settings Tab */}
+        <div className={tab === 'settings' ? 'max-w-3xl' : 'hidden'}>
+          <h1 className="text-2xl mb-4">Settings</h1>
 
-            {settingsTab === 'team' ? (
-              <div className="space-y-6">
-                <AdminInvites />
-              </div>
-            ) : (
-              <LLMSettingsPanel role={role} />
-            )}
+          {/* Settings-level tabs */}
+          <div className="flex gap-4 border-b border-ink/10 mb-6">
+            <button
+              onClick={() => setSettingsTab('team')}
+              className={`py-2 px-1 border-b-2 text-sm transition-colors ${
+                settingsTab === 'team'
+                  ? 'border-sunset text-ink'
+                  : 'border-transparent text-slate hover:text-ink'
+              }`}
+            >
+              Team
+            </button>
+            <button
+              onClick={() => setSettingsTab('llm')}
+              className={`py-2 px-1 border-b-2 text-sm transition-colors ${
+                settingsTab === 'llm'
+                  ? 'border-sunset text-ink'
+                  : 'border-transparent text-slate hover:text-ink'
+              }`}
+            >
+              LLM
+            </button>
           </div>
-        )}
+
+          {/* Settings sub-tabs stay mounted too */}
+          <div className={settingsTab === 'team' ? 'space-y-6' : 'hidden'}>
+            <AdminInvites />
+          </div>
+          <div className={settingsTab === 'llm' ? '' : 'hidden'}>
+            <LLMSettingsPanel role={role} />
+          </div>
+        </div>
+
+        {/* Style Guide Tab */}
+        <div className={tab === 'style-guide' ? '' : 'hidden'}>
+          <StyleGuide />
+        </div>
       </main>
     </div>
   );
