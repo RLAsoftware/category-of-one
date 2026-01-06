@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+- Use Vite's built-in features for fast development and hot module replacement.
+- Optimize build performance with code splitting.
+- Configure environment variables properly for different environments.
+- Leverage Vite plugins for enhanced functionality.
+
+---
+name: eslint-best-practices.mdc
+description: Best practices for ESLint configuration
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+- Use a consistent coding style with ESLint rules.
+- Integrate Prettier for code formatting.
+- Enable linting for both JavaScript and TypeScript files.
+- Use specific plugins like `eslint-plugin-react-hooks` for React best practices.

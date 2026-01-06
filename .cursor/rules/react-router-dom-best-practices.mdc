@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+- Use the latest version of React Router for improved features.
+- Implement nested routes for better organization.
+- Use the `useNavigate` hook for programmatic navigation.
+- Protect routes with authentication checks.

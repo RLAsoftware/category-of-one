@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+- Use environment variables to manage Supabase URL and API keys securely.
+- Implement real-time subscriptions for data updates.
+- Use row-level security policies to protect sensitive data.
+- Optimize queries by selecting only necessary fields.

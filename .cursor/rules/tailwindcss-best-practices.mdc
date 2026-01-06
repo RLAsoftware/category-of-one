@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+- Use utility-first classes for rapid styling.
+- Create custom components for reusable styles.
+- Leverage Tailwind's responsive design features.
+- Use the `@apply` directive for complex styles.

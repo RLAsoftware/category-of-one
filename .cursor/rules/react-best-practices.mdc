@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+- Use functional components and hooks for state management.
+- Optimize performance with React.memo and useCallback.
+- Implement error boundaries for better error handling.
+- Use PropTypes or TypeScript for type checking.
