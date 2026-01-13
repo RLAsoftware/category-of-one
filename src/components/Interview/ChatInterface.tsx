@@ -187,7 +187,17 @@ export function ChatInterface({
           </div>
         )}
 
-          {/* Typing indicator spacer */}
+          {/* Thinking indicator - shows before streaming starts */}
+          {isStreaming && !hasStreamingMessage && !isSynthesizing && (
+            <div className="flex items-center gap-2 text-slate text-xs animate-fade-in">
+              <div className="flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 shadow-soft-message border border-white/60">
+                <Loader2 className="w-3 h-3 animate-spin text-sunset" />
+                <span>Thinking...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Typing indicator - shows while streaming */}
           {isActuallyStreaming && !isSynthesizing && (
             <div className="flex items-center gap-2 text-slate text-xs">
               <div className="flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 shadow-soft-message border border-white/60">

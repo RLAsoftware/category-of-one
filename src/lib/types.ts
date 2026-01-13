@@ -38,14 +38,38 @@ export interface BrandKnowledge {
 }
 
 // Updated to include new chat statuses
-export type InterviewStatus = 
-  | 'base_questions' 
-  | 'analyzing' 
-  | 'follow_up' 
-  | 'synthesizing' 
+export type InterviewStatus =
+  | 'base_questions'
+  | 'analyzing'
+  | 'follow_up'
+  | 'synthesizing'
   | 'completed'
   | 'chatting'
   | 'generating_profile';
+
+// ============================================
+// Interview Progress / Readiness Types
+// ============================================
+
+export type ReadinessStage =
+  | 'just_started'
+  | 'gathering_basics'
+  | 'exploring_depth'
+  | 'refining_details'
+  | 'ready';
+
+export interface ReadinessAssessment {
+  readiness: number; // 0-100
+  stage: ReadinessStage;
+}
+
+export const READINESS_STAGES: { stage: ReadinessStage; label: string; threshold: number }[] = [
+  { stage: 'just_started', label: 'Just Starting', threshold: 0 },
+  { stage: 'gathering_basics', label: 'Gathering Basics', threshold: 20 },
+  { stage: 'exploring_depth', label: 'Exploring Depth', threshold: 40 },
+  { stage: 'refining_details', label: 'Refining Details', threshold: 60 },
+  { stage: 'ready', label: 'Ready', threshold: 80 },
+];
 
 export interface BaseAnswers {
   idealReader: string;

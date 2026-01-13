@@ -6,6 +6,7 @@ import { useCategoryOfOneChat } from '../hooks/useCategoryOfOneChat';
 import { getClientByUserId } from '../lib/supabase';
 import { ChatInterface } from '../components/Interview/ChatInterface';
 import { ProfileResult } from '../components/Interview/ProfileResult';
+import { InterviewProgress } from '../components/Interview/InterviewProgress';
 import { Button } from '../components/ui';
 import { LogOut, Loader2, MessageSquare, ArrowLeft, RefreshCw } from 'lucide-react';
 import type { Client } from '../lib/types';
@@ -65,6 +66,7 @@ export function Interview() {
     error,
     session,
     profile,
+    readiness,
     messageCount,
     isNearTurnLimit,
     isAtTurnLimit,
@@ -158,7 +160,7 @@ export function Interview() {
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       {/* Header */}
-      <header className="py-4 px-6 border-b border-ink/5 bg-white/80 backdrop-blur-md sticky top-0 z-20">
+      <header className="py-4 px-6 bg-white/80 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={handleBackToDashboard}>
@@ -188,6 +190,15 @@ export function Interview() {
           </div>
         </div>
       </header>
+
+      {/* Progress Indicator - Sticky below header */}
+      {!isLoading && !isCompleted && session?.status === 'chatting' && !isSynthesizing && (
+        <div className="sticky top-[65px] z-10 bg-white/80 backdrop-blur-md border-b border-ink/5">
+          <div className="max-w-5xl mx-auto px-6">
+            <InterviewProgress readiness={readiness} isStreaming={isStreaming} />
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1">

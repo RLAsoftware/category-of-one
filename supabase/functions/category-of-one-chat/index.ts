@@ -63,6 +63,27 @@ IMPORTANT: When the conversation is complete and you've gathered all the informa
 Do NOT generate the profile yourself - just have the conversation and signal when ready.`;
 
 const DEFAULT_MODEL = "claude-sonnet-4-20250514";
+const ASSESSMENT_MODEL = "claude-3-5-haiku-20241022";
+
+const READINESS_ASSESSMENT_PROMPT = `You are assessing how complete a brand positioning interview is. Evaluate the conversation for coverage of these 7 areas:
+
+1. Positioning Statement (WHO they help, WHAT they achieve, HOW they do it)
+2. Unique Differentiation (what makes them different from competitors)
+3. Contrarian Position (beliefs that go against industry norms)
+4. Gap They Fill (frustration clients have, what they want instead)
+5. Unique Methodology (their framework, process, or "secret sauce")
+6. Transformation (before/after journey clients experience)
+7. Competitive Landscape (why choose them over others)
+
+Based on the conversation so far, return ONLY valid JSON with no other text:
+{"readiness": <0-100>, "stage": "<just_started|gathering_basics|exploring_depth|refining_details|ready>"}
+
+Scoring guide:
+- 0-19 (just_started): Initial greeting, no substantive info
+- 20-39 (gathering_basics): 1-2 areas touched on
+- 40-59 (exploring_depth): 3-4 areas with specific examples
+- 60-79 (refining_details): 5-6 areas covered well
+- 80-100 (ready): All 7 areas have sufficient depth`;
 
 async function getLLMConfig(): Promise<LLMConfig | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -166,6 +187,7 @@ Deno.serve(async (req: Request) => {
         }
 
         let buffer = '';
+        let fullAssistantResponse = ''; // Accumulate full response for assessment
 
         try {
           while (true) {
@@ -180,18 +202,18 @@ Deno.serve(async (req: Request) => {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6);
                 if (data === '[DONE]') {
-                  controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-                  continue;
+                  continue; // Don't emit [DONE] yet, we'll do it after assessment
                 }
 
                 try {
                   const parsed = JSON.parse(data);
-                  
+
                   // Handle different Claude event types
                   if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                    fullAssistantResponse += parsed.delta.text;
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: parsed.delta.text })}\n\n`));
                   } else if (parsed.type === 'message_stop') {
-                    controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                    // Don't emit [DONE] yet - we'll do it after assessment
                   }
                 } catch {
                   // Skip malformed JSON
@@ -199,6 +221,46 @@ Deno.serve(async (req: Request) => {
               }
             }
           }
+
+          // After streaming completes, assess readiness
+          try {
+            const assessmentResponse = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                'x-api-key': anthropicApiKey,
+                'anthropic-version': '2023-06-01',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: ASSESSMENT_MODEL,
+                max_tokens: 100,
+                system: READINESS_ASSESSMENT_PROMPT,
+                messages: [...claudeMessages, { role: 'assistant', content: fullAssistantResponse }],
+              }),
+            });
+
+            if (assessmentResponse.ok) {
+              const assessmentData = await assessmentResponse.json();
+              const assessmentText = assessmentData.content?.[0]?.text || '';
+
+              // Parse the JSON from the assessment response
+              const jsonMatch = assessmentText.match(/\{[^}]+\}/);
+              if (jsonMatch) {
+                const readinessData = JSON.parse(jsonMatch[0]);
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                  readiness: readinessData.readiness,
+                  stage: readinessData.stage
+                })}\n\n`));
+              }
+            }
+          } catch (assessmentError) {
+            console.error('Readiness assessment failed:', assessmentError);
+            // Continue without readiness data - UI will handle missing data gracefully
+          }
+
+          // Now emit [DONE]
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+
         } finally {
           reader.releaseLock();
           controller.close();

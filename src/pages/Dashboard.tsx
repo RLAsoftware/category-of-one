@@ -11,7 +11,7 @@ import { ProfileCard } from '../components/Dashboard/ProfileCard';
 import { DeleteSessionModal } from '../components/Dashboard/DeleteSessionModal';
 import { EmptyState } from '../components/Dashboard/EmptyState';
 import { ToastContainer } from '../components/ui/Toast';
-import { LogOut, Loader2, MessageSquare, Plus, ArrowLeft } from 'lucide-react';
+import { LogOut, Loader2, MessageSquare, Plus, ArrowLeft, Play } from 'lucide-react';
 import type { Client } from '../lib/types';
 
 export function Dashboard() {
@@ -34,6 +34,11 @@ export function Dashboard() {
   });
 
   const { toasts, showToast, dismissToast } = useToast();
+
+  // Check if there's an in-progress interview
+  const hasInProgressSession = sessions.some(
+    s => s.status === 'chatting' || s.status === 'generating_profile'
+  );
 
   useEffect(() => {
     // If session timed out, redirect to login
@@ -216,11 +221,20 @@ export function Dashboard() {
                 </div>
               )}
 
-              {/* Start New Interview Button */}
+              {/* Start/Resume Interview Button */}
               <div className="mb-6">
                 <Button onClick={handleStartNewInterview} variant="primary" className="gap-2">
-                  <Plus className="w-5 h-5" />
-                  Start New Interview
+                  {hasInProgressSession ? (
+                    <>
+                      <Play className="w-5 h-5" />
+                      Resume Interview
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5" />
+                      Start New Interview
+                    </>
+                  )}
                 </Button>
               </div>
 

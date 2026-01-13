@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { supabase } from '../lib/supabase';
-import type { 
-  LocalChatMessage, 
+import type {
+  LocalChatMessage,
   InterviewSession,
   CategoryOfOneProfile,
+  ReadinessAssessment,
 } from '../lib/types';
 
 interface UseCategoryOfOneChatOptions {
@@ -21,6 +22,7 @@ interface UseCategoryOfOneChatReturn {
   error: string | null;
   session: InterviewSession | null;
   profile: CategoryOfOneProfile | null;
+  readiness: ReadinessAssessment;
   messageCount: number;
   isNearTurnLimit: boolean;
   isAtTurnLimit: boolean;
@@ -45,6 +47,10 @@ export function useCategoryOfOneChat({
   const [isStreaming, setIsStreaming] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [readiness, setReadiness] = useState<ReadinessAssessment>({
+    readiness: 0,
+    stage: 'just_started',
+  });
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamingStartedAtRef = useRef<number | null>(null);
 
@@ -359,11 +365,18 @@ export function useCategoryOfOneChat({
                   const parsed = JSON.parse(data);
                   if (parsed.content) {
                     fullContent += parsed.content;
-                    setMessages(prev => prev.map(m => 
-                      m.id === assistantMessageId 
+                    setMessages(prev => prev.map(m =>
+                      m.id === assistantMessageId
                         ? { ...m, content: fullContent }
                         : m
                     ));
+                  }
+                  // Handle readiness data from edge function
+                  if (parsed.readiness !== undefined && parsed.stage) {
+                    setReadiness({
+                      readiness: parsed.readiness,
+                      stage: parsed.stage,
+                    });
                   }
                 } catch {
                   // Skip malformed JSON
@@ -379,8 +392,8 @@ export function useCategoryOfOneChat({
       }
 
       // Mark message as done streaming
-      setMessages(prev => prev.map(m => 
-        m.id === assistantMessageId 
+      setMessages(prev => prev.map(m =>
+        m.id === assistantMessageId
           ? { ...m, isStreaming: false }
           : m
       ));
@@ -512,11 +525,18 @@ export function useCategoryOfOneChat({
                   const parsed = JSON.parse(data);
                   if (parsed.content) {
                     fullContent += parsed.content;
-                    setMessages(prev => prev.map(m => 
-                      m.id === assistantMessageId 
+                    setMessages(prev => prev.map(m =>
+                      m.id === assistantMessageId
                         ? { ...m, content: fullContent }
                         : m
                     ));
+                  }
+                  // Handle readiness data from edge function
+                  if (parsed.readiness !== undefined && parsed.stage) {
+                    setReadiness({
+                      readiness: parsed.readiness,
+                      stage: parsed.stage,
+                    });
                   }
                 } catch {
                   // Skip malformed JSON
@@ -533,8 +553,8 @@ export function useCategoryOfOneChat({
       }
 
       // Mark message as done streaming
-      setMessages(prev => prev.map(m => 
-        m.id === assistantMessageId 
+      setMessages(prev => prev.map(m =>
+        m.id === assistantMessageId
           ? { ...m, isStreaming: false }
           : m
       ));
@@ -574,10 +594,8 @@ export function useCategoryOfOneChat({
         flagged_for_review: newMessageCount >= 100
       } : null);
 
-      // Check if synthesis is ready
-      const shouldAutoSynthesize =
-        fullContent.includes('[SYNTHESIS_READY]') ||
-        newMessageCount >= 40; // Failsafe: auto-synthesize after enough turns even if the tag is missing
+      // Check if synthesis is ready (only when AI explicitly signals)
+      const shouldAutoSynthesize = fullContent.includes('[SYNTHESIS_READY]');
 
       if (shouldAutoSynthesize) {
         // Auto-trigger synthesis
@@ -586,9 +604,6 @@ export function useCategoryOfOneChat({
           role: 'assistant',
           content: fullContent,
         }]);
-      } else if (newMessageCount >= 100) {
-        // Auto-flag for review if 100 turns reached without synthesis
-        console.warn(`Session ${session.id} reached 100 turns without synthesis`);
       }
 
     } catch (err) {
@@ -767,6 +782,7 @@ export function useCategoryOfOneChat({
       // Clear local state completely
       setMessages([]);
       setProfile(null);
+      setReadiness({ readiness: 0, stage: 'just_started' });
       setSession(prev => prev ? {
         ...prev,
         status: 'chatting',
@@ -921,8 +937,8 @@ export function useCategoryOfOneChat({
   }, [profile, clientName]);
 
   const messageCount = session?.message_count || 0;
-  const isNearTurnLimit = messageCount >= 80;
-  const isAtTurnLimit = messageCount >= 100;
+  const isNearTurnLimit = false; // Disabled for now
+  const isAtTurnLimit = false; // Disabled for now
 
   return {
     messages,
@@ -932,6 +948,7 @@ export function useCategoryOfOneChat({
     error,
     session,
     profile,
+    readiness,
     messageCount,
     isNearTurnLimit,
     isAtTurnLimit,
