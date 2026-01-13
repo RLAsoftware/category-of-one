@@ -76,23 +76,51 @@ export function useCategoryOfOneChat({
     return { supabaseUrl, headers };
   }, []);
 
+  // Track if initialization is in progress to prevent duplicate calls
+  const initializingRef = useRef(false);
+
   // Initialize or load existing chat session
   const initializeChat = useCallback(async () => {
+    // Guard against empty clientId
+    if (!clientId) {
+      return;
+    }
+
+    // Prevent concurrent initialization calls (within this hook instance)
+    if (initializingRef.current) {
+      return;
+    }
+
+    // Prevent concurrent initialization across hook instances (React StrictMode creates multiple)
+    const lockKey = `interview_init_${clientId}`;
+    const existingLock = sessionStorage.getItem(lockKey);
+    if (existingLock) {
+      const lockTime = parseInt(existingLock, 10);
+      // If lock is less than 5 seconds old, another instance is handling it
+      if (Date.now() - lockTime < 5000) {
+        return;
+      }
+    }
+    sessionStorage.setItem(lockKey, Date.now().toString());
+
+    initializingRef.current = true;
+
     setIsLoading(true);
     setError(null);
 
     try {
-      // Check for existing IN-PROGRESS session (exclude completed)
+      // Check for existing IN-PROGRESS session (exclude completed and deleted)
       const { data: existingSession, error: sessionError } = await supabase
         .from('interview_sessions')
         .select('*')
         .eq('client_id', clientId)
-        .in('status', ['chatting', 'generating_profile'])
+        .neq('status', 'completed')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (sessionError && sessionError.code !== 'PGRST116') {
+      if (sessionError) {
         throw sessionError;
       }
 
@@ -105,6 +133,7 @@ export function useCategoryOfOneChat({
           .insert({
             client_id: clientId,
             status: 'chatting',
+            archived: false,
           })
           .select()
           .single();
@@ -161,8 +190,14 @@ export function useCategoryOfOneChat({
             content: m.content,
           })));
         } else {
-          // Start new conversation - get initial greeting from AI
-          await startNewConversation(currentSession.id);
+          // Start new conversation - show UI immediately while greeting streams
+          // Set loading to false BEFORE starting the conversation so user sees the chat UI
+          setIsLoading(false);
+          initializingRef.current = false;
+          sessionStorage.removeItem(`interview_init_${clientId}`);
+          // Start streaming greeting (will set isStreaming = true)
+          startNewConversation(currentSession.id);
+          return; // Early return - startNewConversation handles its own state
         }
 
         // Load profile if completed
@@ -182,6 +217,9 @@ export function useCategoryOfOneChat({
       setError(err instanceof Error ? err.message : 'Failed to initialize chat');
     } finally {
       setIsLoading(false);
+      initializingRef.current = false;
+      // Clear the cross-instance lock
+      sessionStorage.removeItem(`interview_init_${clientId}`);
     }
   }, [clientId]);
 
@@ -229,25 +267,31 @@ export function useCategoryOfOneChat({
     setError(null);
 
     try {
-      // Fetch the session
-      const { data: existingSession, error: sessionError } = await supabase
-        .from('interview_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .single();
+      // Fetch session, messages, and profile in parallel for faster loading
+      const [sessionResult, messagesResult, profileResult] = await Promise.all([
+        supabase
+          .from('interview_sessions')
+          .select('*')
+          .eq('id', sessionId)
+          .single(),
+        supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('category_of_one_profiles')
+          .select('*')
+          .eq('session_id', sessionId)
+          .maybeSingle(),
+      ]);
 
-      if (sessionError) throw sessionError;
-      if (!existingSession) throw new Error('Session not found');
+      if (sessionResult.error) throw sessionResult.error;
+      if (!sessionResult.data) throw new Error('Session not found');
+      if (messagesResult.error) throw messagesResult.error;
 
-      // Load messages
-      const { data: chatMessages, error: messagesError } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-
-      if (messagesError) throw messagesError;
-
+      const existingSession = sessionResult.data;
+      const chatMessages = messagesResult.data;
       const actualMessageCount = chatMessages?.length || 0;
       const recordedMessageCount = existingSession.message_count || 0;
 
@@ -262,7 +306,7 @@ export function useCategoryOfOneChat({
         // Fix the mismatch by updating the session's message_count to match reality
         const { error: fixError } = await supabase
           .from('interview_sessions')
-          .update({ 
+          .update({
             message_count: actualMessageCount,
             flagged_for_review: actualMessageCount >= 100
           })
@@ -287,17 +331,9 @@ export function useCategoryOfOneChat({
         })));
       }
 
-      // Load profile if completed
-      if (existingSession.status === 'completed') {
-        const { data: existingProfile } = await supabase
-          .from('category_of_one_profiles')
-          .select('*')
-          .eq('session_id', sessionId)
-          .single();
-
-        if (existingProfile) {
-          setProfile(existingProfile);
-        }
+      // Set profile if it exists and session is completed
+      if (existingSession.status === 'completed' && profileResult.data) {
+        setProfile(profileResult.data);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load session');
@@ -399,7 +435,6 @@ export function useCategoryOfOneChat({
       ));
 
       // CRITICAL: Save assistant message to database
-      // For initial greeting, we don't update message_count since it's just the greeting
       const { error: saveError } = await supabase.from('chat_messages').insert({
         session_id: sessionId,
         role: 'assistant',
@@ -410,6 +445,19 @@ export function useCategoryOfOneChat({
         throw new Error(`Failed to save greeting message: ${saveError.message}`);
       }
       messageSaved = true;
+
+      // Update message_count to reflect the greeting message
+      const { error: countError } = await supabase
+        .from('interview_sessions')
+        .update({ message_count: 1 })
+        .eq('id', sessionId);
+
+      if (countError) {
+        console.error('Failed to update message count for greeting:', countError);
+      }
+
+      // Update local session state
+      setSession(prev => prev ? { ...prev, message_count: 1 } : null);
 
     } catch (err) {
       // Cleanup: Remove incomplete message from UI if it wasn't saved

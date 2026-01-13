@@ -112,8 +112,8 @@ export function Interview() {
   };
 
   const handleConfirmStartFromScratch = async () => {
-    await resetChat();
     setShowStartFromScratchModal(false);
+    await resetChat();
     // Stay on the same page - the conversation has been wiped clean
   };
 

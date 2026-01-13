@@ -27,6 +27,7 @@ export function Dashboard() {
     sessions,
     latestProfile,
     loading: dashboardLoading,
+    hasInProgressSession,
     deleteSession,
     refreshSessions,
   } = useDashboard({
@@ -34,11 +35,6 @@ export function Dashboard() {
   });
 
   const { toasts, showToast, dismissToast } = useToast();
-
-  // Check if there's an in-progress interview
-  const hasInProgressSession = sessions.some(
-    s => s.status === 'chatting' || s.status === 'generating_profile'
-  );
 
   useEffect(() => {
     // If session timed out, redirect to login
@@ -196,12 +192,12 @@ export function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 py-8 px-6">
         <div className="max-w-6xl mx-auto">
-          {dashboardLoading && sessions.length === 0 ? (
+          {dashboardLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 text-sunset animate-spin" />
             </div>
-          ) : sessions.length === 0 ? (
-            // Empty State for first-time users
+          ) : sessions.length === 0 && !latestProfile ? (
+            // Empty State for first-time users (no interviews yet)
             <EmptyState onStartInterview={handleStartNewInterview} />
           ) : (
             <>
@@ -227,7 +223,7 @@ export function Dashboard() {
                   {hasInProgressSession ? (
                     <>
                       <Play className="w-5 h-5" />
-                      Resume Interview
+                      Continue Interview
                     </>
                   ) : (
                     <>
@@ -239,18 +235,14 @@ export function Dashboard() {
               </div>
 
               {/* Session List */}
-              <div>
-                <h2 className="text-xl font-semibold text-ink mb-4">
-                  Your Interviews
-                  <span className="text-sm text-slate font-normal ml-2">
-                    ({sessions.length} {sessions.length === 1 ? 'session' : 'sessions'})
-                  </span>
-                </h2>
-                {sessions.length === 0 ? (
-                  <div className="bg-white rounded-2xl p-8 text-center text-slate">
-                    <p>No interviews found matching your search.</p>
-                  </div>
-                ) : (
+              {sessions.length > 0 && (
+                <div>
+                  <h2 className="text-xl font-semibold text-ink mb-4">
+                    Your Interviews
+                    <span className="text-sm text-slate font-normal ml-2">
+                      ({sessions.length} {sessions.length === 1 ? 'session' : 'sessions'})
+                    </span>
+                  </h2>
                   <SessionList
                     sessions={sessions}
                     onDelete={(sessionId) => {
@@ -267,17 +259,17 @@ export function Dashboard() {
                         handleDeleteClick(
                           sessionId,
                           title,
-                          new Date(session.created_at).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric' 
+                          new Date(session.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
                           })
                         );
                       }
                     }}
                   />
-                )}
-              </div>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, getClientByUserId, hasClientHistory } from '../../lib/supabase';
+import { supabase, getClientByUserId, getClientInterviewState } from '../../lib/supabase';
 import { Loader2 } from 'lucide-react';
 
 export function AuthCallback() {
@@ -31,14 +31,16 @@ export function AuthCallback() {
           if (roleData?.role === 'admin') {
             navigate('/admin', { replace: true });
           } else if (roleData?.role === 'client') {
-            // For clients, check if they have history to decide where to redirect
+            // For clients, check their interview state to decide where to redirect
             const client = await getClientByUserId(userId);
             if (client) {
-              const hasHistory = await hasClientHistory(client.id);
-              if (hasHistory) {
-                navigate('/dashboard', { replace: true });
-              } else {
+              const interviewState = await getClientInterviewState(client.id);
+              if (interviewState === 'active') {
+                // Has an active interview - resume it
                 navigate('/interview', { replace: true });
+              } else {
+                // No interviews or only completed - go to dashboard
+                navigate('/dashboard', { replace: true });
               }
             } else {
               // No client profile found
@@ -58,13 +60,13 @@ export function AuthCallback() {
               if (activationResult?.success) {
                 // Client activated successfully
                 const clientId = activationResult.client_id;
-                
-                // Redirect based on their history
-                const hasHistory = await hasClientHistory(clientId);
-                if (hasHistory) {
-                  navigate('/dashboard', { replace: true });
-                } else {
+
+                // Redirect based on interview state
+                const interviewState = await getClientInterviewState(clientId);
+                if (interviewState === 'active') {
                   navigate('/interview', { replace: true });
+                } else {
+                  navigate('/dashboard', { replace: true });
                 }
                 return;
               } else {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/Auth/LoginForm';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, getClientByUserId, hasClientHistory } from '../lib/supabase';
+import { supabase, getClientByUserId, getClientInterviewState } from '../lib/supabase';
 
 export function Login() {
   const navigate = useNavigate();
@@ -36,19 +36,22 @@ export function Login() {
       if (role === 'admin') {
         navigate('/admin', { replace: true });
       } else if (role === 'client') {
-        // For clients, check if they have history to decide where to redirect
+        // For clients, check their interview state to decide where to redirect
         (async () => {
           const client = await getClientByUserId(user.id);
           if (client) {
-            const hasHistory = await hasClientHistory(client.id);
-            if (hasHistory) {
-              navigate('/dashboard', { replace: true });
-            } else {
+            const interviewState = await getClientInterviewState(client.id);
+            if (interviewState === 'active') {
+              // Has an active interview - resume it
               navigate('/interview', { replace: true });
+            } else {
+              // No interviews or only completed - go to dashboard
+              // Dashboard shows EmptyState for 'none', normal view for 'completed'
+              navigate('/dashboard', { replace: true });
             }
           } else {
-            // No client profile, shouldn't happen but redirect to interview as fallback
-            navigate('/interview', { replace: true });
+            // No client profile, shouldn't happen but redirect to dashboard as fallback
+            navigate('/dashboard', { replace: true });
           }
         })();
       } else if (role === null && user.email) {
@@ -62,8 +65,12 @@ export function Login() {
 
           if (activationResult?.success) {
             // Client activated successfully
-            const hasHistory = await hasClientHistory(activationResult.client_id);
-            navigate(hasHistory ? '/dashboard' : '/interview', { replace: true });
+            const interviewState = await getClientInterviewState(activationResult.client_id);
+            if (interviewState === 'active') {
+              navigate('/interview', { replace: true });
+            } else {
+              navigate('/dashboard', { replace: true });
+            }
           }
         })();
       }

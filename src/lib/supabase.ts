@@ -156,7 +156,7 @@ export async function getClientSessions(clientId: string, includeDeleted: boolea
     .from('interview_sessions')
     .select('*')
     .eq('client_id', clientId)
-    .eq('archived', false)
+    .or('archived.eq.false,archived.is.null')
     .order('last_message_at', { ascending: false, nullsFirst: false });
 
   if (!includeDeleted) {
@@ -420,26 +420,38 @@ export async function updateSessionActivity(sessionId: string) {
  * Get the latest completed profile for a client
  */
 export async function getLatestProfileForClient(clientId: string) {
+  // Query from interview_sessions to avoid PostgREST 406 errors with embedded filters
   const { data, error } = await supabase
-    .from('category_of_one_profiles')
-    .select('*, interview_sessions!inner(*)')
+    .from('interview_sessions')
+    .select('category_of_one_profiles(*)')
     .eq('client_id', clientId)
-    .eq('interview_sessions.status', 'completed')
-    .is('interview_sessions.deleted_at', null)
+    .eq('status', 'completed')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No profile found
-      return null;
-    }
     console.error('getLatestProfileForClient error:', error.message);
     return null;
   }
 
-  return data;
+  // No completed session found
+  if (!data) {
+    return null;
+  }
+
+  // Extract the profile from the nested result
+  // The profile is nested under category_of_one_profiles
+  const profile = data?.category_of_one_profiles;
+
+  // Handle case where session exists but has no profile yet
+  if (!profile || (Array.isArray(profile) && profile.length === 0)) {
+    return null;
+  }
+
+  // Return the first profile if it's an array, otherwise return directly
+  return Array.isArray(profile) ? profile[0] : profile;
 }
 
 /**
@@ -488,5 +500,54 @@ export async function hasClientHistory(clientId: string): Promise<boolean> {
   }
 
   return (sessionCount || 0) > 0 || (profileCount || 0) > 0;
+}
+
+/**
+ * Get the client's interview state for login redirect logic
+ * Returns: 'none' | 'active' | 'completed'
+ */
+export type InterviewState = 'none' | 'active' | 'completed';
+
+export async function getClientInterviewState(clientId: string): Promise<InterviewState> {
+  // Check for active interview first (any non-completed status)
+  // Includes: chatting, generating_profile, base_questions, analyzing, follow_up, synthesizing
+  const { data: activeSession, error: activeError } = await supabase
+    .from('interview_sessions')
+    .select('id')
+    .eq('client_id', clientId)
+    .neq('status', 'completed')
+    .is('deleted_at', null)
+    .limit(1)
+    .maybeSingle();
+
+  if (activeError) {
+    console.error('getClientInterviewState active check error:', activeError.message);
+    return 'none';
+  }
+
+  if (activeSession) {
+    return 'active';
+  }
+
+  // Check for any completed interview
+  const { data: completedSession, error: completedError } = await supabase
+    .from('interview_sessions')
+    .select('id')
+    .eq('client_id', clientId)
+    .eq('status', 'completed')
+    .is('deleted_at', null)
+    .limit(1)
+    .maybeSingle();
+
+  if (completedError) {
+    console.error('getClientInterviewState completed check error:', completedError.message);
+    return 'none';
+  }
+
+  if (completedSession) {
+    return 'completed';
+  }
+
+  return 'none';
 }
 

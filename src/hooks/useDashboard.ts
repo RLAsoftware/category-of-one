@@ -11,23 +11,21 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
   const [deletedSessions, setDeletedSessions] = useState<InterviewSession[]>([]);
   const [latestProfile, setLatestProfile] = useState<CategoryOfOneProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasInProgressSession, setHasInProgressSession] = useState(false);
+  const [hasCompletedSession, setHasCompletedSession] = useState(false);
 
-  // Fetch all sessions
+  // Fetch all sessions (does not control loading state - that's handled by fetchAllData)
   const fetchSessions = useCallback(async () => {
     if (!clientId) {
-      setLoading(false);
       return;
     }
-    
-    setLoading(true);
+
     try {
       const sessionData = await getClientSessions(clientId);
       setSessions(sessionData);
     } catch (error) {
       console.error('Error fetching sessions:', error);
       setSessions([]);
-    } finally {
-      setLoading(false);
     }
   }, [clientId]);
 
@@ -47,13 +45,65 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
   // Fetch latest completed profile
   const fetchLatestProfile = useCallback(async () => {
     if (!clientId) return;
-    
+
     try {
       const profileData = await getLatestProfileForClient(clientId);
       setLatestProfile(profileData);
     } catch (error) {
       console.error('Error fetching latest profile:', error);
       setLatestProfile(null);
+    }
+  }, [clientId]);
+
+  // Check for any in-progress session (any non-completed status)
+  const checkInProgressSession = useCallback(async () => {
+    if (!clientId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('interview_sessions')
+        .select('id')
+        .eq('client_id', clientId)
+        .neq('status', 'completed')
+        .is('deleted_at', null)
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking in-progress session:', error);
+        setHasInProgressSession(false);
+        return;
+      }
+
+      setHasInProgressSession(data && data.length > 0);
+    } catch (error) {
+      console.error('Error checking in-progress session:', error);
+      setHasInProgressSession(false);
+    }
+  }, [clientId]);
+
+  // Check for any completed session
+  const checkCompletedSession = useCallback(async () => {
+    if (!clientId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('interview_sessions')
+        .select('id')
+        .eq('client_id', clientId)
+        .eq('status', 'completed')
+        .is('deleted_at', null)
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking completed session:', error);
+        setHasCompletedSession(false);
+        return;
+      }
+
+      setHasCompletedSession(data && data.length > 0);
+    } catch (error) {
+      console.error('Error checking completed session:', error);
+      setHasCompletedSession(false);
     }
   }, [clientId]);
 
@@ -87,12 +137,29 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
 
   // Set up real-time subscription to sessions table
   useEffect(() => {
-    if (!clientId) return;
+    if (!clientId) {
+      setLoading(false);
+      return;
+    }
 
-    // Initial fetch
-    fetchSessions();
-    fetchDeletedSessions();
-    fetchLatestProfile();
+    // Initial fetch - wait for all critical data before setting loading to false
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        // Run all fetches in parallel, but wait for all to complete
+        await Promise.all([
+          fetchSessions(),
+          fetchDeletedSessions(),
+          fetchLatestProfile(),
+          checkInProgressSession(),
+          checkCompletedSession(),
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
 
     // Set up real-time subscription
     const channel = supabase
@@ -109,6 +176,8 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
           // Refresh sessions when any change occurs
           fetchSessions();
           fetchDeletedSessions();
+          checkInProgressSession();
+          checkCompletedSession();
         }
       )
       .on(
@@ -129,7 +198,7 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [clientId, fetchSessions, fetchDeletedSessions, fetchLatestProfile]);
+  }, [clientId, fetchSessions, fetchDeletedSessions, fetchLatestProfile, checkInProgressSession, checkCompletedSession]);
 
 
   return {
@@ -137,6 +206,8 @@ export function useDashboard({ clientId }: UseDashboardOptions) {
     deletedSessions,
     latestProfile,
     loading,
+    hasInProgressSession,
+    hasCompletedSession,
     deleteSession,
     restoreSession: restoreDeletedSession,
     refreshSessions: fetchSessions,
